@@ -3,10 +3,10 @@ You are helping me build a production-grade backend for an AI-powered RAG system
 Tech stack:
 - Python + FastAPI
 - Qdrant (vector DB)
-- Gemini Embeddings (Vertex AI)
+- Gemini Embeddings 2 (Vertex AI)
 - Google Drive API (for ingestion)
 - Optional: LangChain / LangGraph (only if needed, avoid overuse)
-- LLM from ....
+- LLM from llama-3.1-8b-instant by groq
 
 Architecture stages:
 1. Ingestion (Google Drive)
@@ -31,7 +31,7 @@ Architecture stages:
 
 Constraints:
 - Keep code modular and production-ready
-- Use uv for package management
+- Use `uv` for package management [IMPORTANT]
 - Use google coding convention
 - Use clear folder structure
 - Avoid overengineering

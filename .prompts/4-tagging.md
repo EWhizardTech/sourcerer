@@ -11,6 +11,8 @@ Generate for EACH chunk:
 - keywords (3–5)
 - difficulty
 
+Use llama-3.1-8b-instant by groq with structured output.
+
 STRICT LLM OUTPUT:
 {
   "subject": "...",

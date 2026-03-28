@@ -4,26 +4,33 @@ Input:
 Tagged chunks
 
 Requirements:
-- Generate embeddings using Gemini embedding-2
-- Use ONLY chunk["text"]
 
-Output:
+1. Use Gemini embedding-2
+
+2. If:
+   - text chunk → embed text
+   - transcript → embed text
+   - image chunk → embed image
+
+OUTPUT: 
+
 [
   {
     "chunk_id": "...",
-    "embedding": [...],
+    "dense_vector": [...],
     "text": "...",
+    "image": {...},
     "metadata": {...},
     "tags": {...}
   }
 ]
 
-Structure:
-- services/embedding_service.py
-
 Constraints:
-- No Qdrant yet
-- Batch processing
+- Do NOT embed metadata
+- Do NOT mix text + image
+
+IMPORTANT:
+- No sparse vectors here
 
 At the end:
-- Show example
+- Show text + image embedding example

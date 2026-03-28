@@ -4,57 +4,53 @@ Input:
 - File content from ingestion module
 
 Requirements:
+
 - Extract clean text from:
+  - PDF (PyMuPDF or pdfplumber)
   - TXT
   - MD
   - PPT
   - DOCX
-- Preserve basic structure:
-  - headings (if possible)
+
+- Preserve structure:
+  - headings
   - paragraphs
-- Detect YouTube links in the text
-   - Regex for:
-     - youtube.com/watch?v=
-     - youtu.be/
-- For each YouTube link:
-   - Extract video_id
-   - Fetch transcript using:
-     - youtube-transcript-api (preferred)
-- Store transcript separately AND optionally append to main text
+
+
+- For PDFs:
+  - extract embedded images
+  - store:
+    {
+      "image_id": "...",
+      "image_bytes": "...",
+      "page_number": ...
+    }
+
+- Detect YouTube links
+- Extract transcript
 
 Output format:
 {
-  "text": "...cleaned document text...",
-  "external_content": [
+  "text": "...",
+  "images": [
     {
-      "type": "youtube",
-      "url": "...",
-      "video_id": "...",
-      "transcript": "..."
+      "image_id": "...",
+      "image_bytes": "...",
+      "page_number": ...
     }
   ],
-  "metadata": {
-    "source": "gdrive",
-    "file_name": "...",
-    "type": "pdf"
-  }
+  "external_content": [...],
+  "metadata": {...}
 }
 
-Structure:
-- services/parser_service.py
-- services/youtube_service.py
-
 Constraints:
-- If transcript is unavailable, fail gracefully (do not break parsing)
-- Do NOT implement chunking yet
-- Keep it modular
+- Do NOT chunk
+- Do NOT embed
 
-Functions to implement:
-- parse_document(file_bytes, mime_type)
-- extract_youtube_links(text)
-- get_youtube_transcript(video_id)
+Functions:
+- parse_document()
+- extract_youtube_links()
+- get_youtube_transcript()
 
 At the end:
-- Show example: input → output
-- Show example:
-  input text with YouTube link → parsed output with transcript
+- Show example output with images

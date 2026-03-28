@@ -13,6 +13,11 @@ Generate for EACH chunk:
 
 Use llama-3.1-8b-instant by groq with structured output.
 
+
+If chunk contains image:
+   - leave out and make it empty tags
+
+
 STRICT LLM OUTPUT:
 {
   "subject": "...",

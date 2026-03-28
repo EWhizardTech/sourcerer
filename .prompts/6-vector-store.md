@@ -1,15 +1,32 @@
-Implement vector storage.
+Implement vector storage for hybrid search using Qdrant.
 
 Input:
-Chunks with embeddings, metadata, and tags
+Chunks with:
+- dense_vector (Gemini)
+- sparse_vector (BM25) [optional for images]
+- metadata
+- tags
 
 Requirements:
 
 1. Use chunk_id as Qdrant point ID
 
-2. Store vector + payload
+2. Store MULTIPLE NAMED VECTORS:
 
-Payload MUST include:
+{
+  "id": chunk_id,
+  "vector": {
+    "dense": [...],     // REQUIRED
+
+    "sparse": {         // REQUIRED for text/transcript
+      "indices": [...],
+      "values": [...]
+    }
+  },
+  "payload": {...}
+}
+
+3. Payload MUST include:
 
 {
   "text": "...",
@@ -34,16 +51,25 @@ Payload MUST include:
 
   // Optional
   "video_id": "...",
-  "parent_doc": "..."
+  "parent_doc": "...",
+  "page_number": ...
 }
 
-3. Ensure:
-- file_id is always present
-- payload fields are consistent
+4. Special handling:
 
-4. Upsert behavior:
-- inserting same chunk_id should overwrite old vector
+- For IMAGE chunks:
+  - store ONLY dense vector
+  - omit sparse vector
 
+5. Collection MUST be created with:
+
+- dense vector config
+- sparse vector config
+
+6. Upsert behavior:
+
+- inserting same chunk_id MUST overwrite existing point
+- must be idempotent
 
 Structure:
 - services/vector_store.py
@@ -53,11 +79,14 @@ Functions:
 - upsert_chunks()
 
 Constraints:
-- Do NOT implement retrieval
-- Do NOT lose metadata
-- No retrieval yet
-- Must support overwrite (idempotent inserts)
+
+- MUST use named vectors ("dense", "sparse")
+- MUST support hybrid search
+- DO NOT flatten vectors into one
+- DO NOT lose metadata
 
 At the end:
-- Show example stored point
-- Show how overwrite works
+
+- Show example stored point (text chunk)
+- Show example stored point (image chunk)
+- Show overwrite example

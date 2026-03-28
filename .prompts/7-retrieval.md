@@ -6,22 +6,31 @@ Input:
   "filters": {
     "course_code": "...",
     "year": "...",
-    "exam_type": "...",
-    "content_type": "...",
-    "subject": "..."
+    "tags": [...],
   }
 }
 
 Flow:
 
-1. Embed query
-2. Apply metadata filters
-3. Vector search (Qdrant)
-4. Return top_k
+2. Use Qdrant Query API (NOT manual scoring)
+
+3. Perform hybrid search using TWO queries:
+
+   - Dense query (named vector: "dense")
+   - Sparse query (named vector: "sparse")
+
+4. Use fusion:
+   - RRF (Reciprocal Rank Fusion) OR
+   - DBSF (Distribution-Based Score Fusion)
+
+5. Apply metadata filters
+
+6. Return top_k results
 
 Output:
 [
   {
+    "chunk_id": "...",
     "text": "...",
     "score": ...,
     "metadata": {...},
@@ -31,11 +40,16 @@ Output:
 
 Structure:
 - services/retrieval_service.py
-- routes/retrieval.py
 
 Constraints:
-- Support doc + transcript retrieval
-- Filters optional
+
+- DO NOT manually combine scores
+- DO NOT use weighted sum (0.7/0.3)
+- MUST use Qdrant Query API
+- MUST support:
+  - document
+  - transcript
+  - image
 
 At the end:
-- Show example query + response
+- Show example hybrid query call

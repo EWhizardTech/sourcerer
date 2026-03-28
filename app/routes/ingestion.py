@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.services.gdrive_service import list_files_in_folder
+from app.services.metadata_service import extract_folder_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,9 @@ class IngestGDriveRequest(BaseModel):
     """Request body for the /ingest/gdrive endpoint."""
 
     folder_id: str  # Google Drive folder ID to ingest from.
+    course_code: str | None = None
+    year: str | None = None
+    include_root_as_tag: bool = False
 
 
 class FileResponse(BaseModel):
@@ -38,6 +42,7 @@ class FileResponse(BaseModel):
     file_path: str
     modified_time: str
     content: str  # base64-encoded bytes.
+    folder_metadata: dict
 
 
 @router.post("/gdrive", response_model=list[FileResponse])
@@ -45,15 +50,15 @@ async def ingest_gdrive(request: IngestGDriveRequest) -> list[FileResponse]:
     """Fetch and download all supported files from a Google Drive folder.
 
     Args:
-        request: Contains the Drive folder_id to ingest.
+        request: Ingestion config (folder_id, course_code, year, etc.).
 
     Returns:
-        List of FileResponse objects, one per successfully ingested file.
+        List of FileResponse objects with metadata.
 
     Raises:
         HTTPException 500: If the Drive API call fails.
     """
-    logger.info("Received ingest request for folder_id=%s", request.folder_id)
+    logger.info("Received ingest request for folder_id=%s (course=%s)", request.folder_id, request.course_code)
 
     try:
         records = list_files_in_folder(request.folder_id)
@@ -64,15 +69,26 @@ async def ingest_gdrive(request: IngestGDriveRequest) -> list[FileResponse]:
             detail=f"Google Drive ingestion failed: {exc}",
         ) from exc
 
-    # Encode raw bytes to base64 string for JSON transport.
-    return [
-        FileResponse(
-            file_id=r["file_id"],
-            file_name=r["file_name"],
-            mime_type=r["mime_type"],
+    results = []
+    for r in records:
+        # Step 3: Metadata extraction (after Step 1 Ingestion and Step 2 Incremental check — implicit here)
+        metadata = extract_folder_metadata(
             file_path=r["file_path"],
-            modified_time=r["modified_time"],
-            content=base64.b64encode(r["content"]).decode("utf-8"),
+            course_code=request.course_code,
+            year=request.year,
+            include_root=request.include_root_as_tag,
         )
-        for r in records
-    ]
+
+        results.append(
+            FileResponse(
+                file_id=r["file_id"],
+                file_name=r["file_name"],
+                mime_type=r["mime_type"],
+                file_path=r["file_path"],
+                modified_time=r["modified_time"],
+                content=base64.b64encode(r["content"]).decode("utf-8"),
+                folder_metadata=metadata,
+            )
+        )
+    
+    return results

@@ -5,7 +5,6 @@ Input:
 
 Requirements:
 - Extract clean text from:
-  - PDF (use PyMuPDF or pdfplumber)
   - TXT
   - MD
   - PPT

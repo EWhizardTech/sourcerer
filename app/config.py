@@ -12,6 +12,16 @@ class Settings(BaseSettings):
     # Path to the Google service account JSON key file.
     gdrive_service_account_path: str
 
+    # Qdrant configuration
+    qdrant_api_key: str
+    qdrant_cluster_endpoint: str
+    qdrant_collection_name: str = "sourcerer_collection"
+    qdrant_vector_size: int = 768  # Gemini Embeddings default
+    qdrant_distance: str = "Cosine"
+
+    # Tracking DB configuration
+    db_path: str = "data/sourcerer.db"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

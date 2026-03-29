@@ -30,12 +30,24 @@ class SectionChunker(BaseChunker):
             idx = 0
 
             for section in sections:
+                heading = section.get("heading") or ""
                 content = section.get("content", "")
 
                 if isinstance(content, list):
                     content = "\n".join(content)
 
-                sub_chunks = split_words(content, self.chunk_size, self.overlap)
+                # Keep heading context in the chunk text for better retrieval quality.
+                section_text = "\n".join(part for part in [heading, content] if part).strip()
+
+                # Structural sections can be sparse; still emit one chunk so each parsed
+                # section is represented downstream.
+                if not section_text:
+                    section_text = heading.strip() if heading else "[empty section]"
+
+                sub_chunks = split_words(section_text, self.chunk_size, self.overlap)
+
+                if not sub_chunks:
+                    sub_chunks = [section_text]
 
                 for sub in sub_chunks:
                     chunks.append(self._build_chunk(file_id, idx, sub, metadata))

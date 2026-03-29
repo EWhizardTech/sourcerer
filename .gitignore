@@ -208,3 +208,5 @@ __marimo__/
 
 secrets/
 .qdrant-sample.py
+
+tests/results/

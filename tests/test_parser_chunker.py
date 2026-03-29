@@ -1,17 +1,38 @@
 # tests/test_parser_chunker.py
 
 from pathlib import Path
+from datetime import datetime
+import json
 
 from app.services.parsing.factory import ParserFactory
 from app.services.chunking.chunker import chunk_document
 
 
 SAMPLES_DIR = Path(__file__).parent / "samples"
+RESULTS_DIR = Path(__file__).parent / "results"
 
 
 def load_file_bytes(file_path: Path) -> bytes:
     with open(file_path, "rb") as f:
         return f.read()
+
+
+def write_parsed_and_chunks(file_name: str, parsed: dict, chunks: list[dict]) -> Path:
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    suffix = Path(file_name).suffix.lstrip(".") or "file"
+    out_file = RESULTS_DIR / f"{Path(file_name).stem}_{suffix}_{timestamp}.txt"
+
+    with open(out_file, "w", encoding="utf-8") as f:
+        f.write(f"file_name: {file_name}\n")
+        f.write(f"generated_at: {timestamp}\n\n")
+        f.write("=== PARSED OUTPUT ===\n")
+        f.write(json.dumps(parsed, indent=2, ensure_ascii=True))
+        f.write("\n\n=== CHUNKS ===\n")
+        f.write(json.dumps(chunks, indent=2, ensure_ascii=True))
+        f.write("\n")
+
+    return out_file
 
 
 def test_txt_parser_and_chunker():
@@ -28,10 +49,12 @@ def test_txt_parser_and_chunker():
 
     # Chunking
     chunks = chunk_document(parsed, {}, "txt_file")
+    out_file = write_parsed_and_chunks(file_path.name, parsed, chunks)
 
     assert len(chunks) > 0
     assert "chunk_id" in chunks[0]
     assert "text" in chunks[0]
+    assert out_file.exists()
 
 
 def test_md_parser_and_chunker():
@@ -49,9 +72,11 @@ def test_md_parser_and_chunker():
 
     # Chunking (should auto-use section chunker)
     chunks = chunk_document(parsed, {}, "md_file")
+    out_file = write_parsed_and_chunks(file_path.name, parsed, chunks)
 
     assert len(chunks) > 0
     assert "chunk_id" in chunks[0]
 
     # Ensure sections influence chunking
     assert len(chunks) >= len(parsed["sections"])
+    assert out_file.exists()

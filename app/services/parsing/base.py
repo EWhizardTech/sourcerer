@@ -20,12 +20,12 @@ class BaseParser(ABC):
     def parse(self, content: bytes, file_name: str) -> dict:
         pass
 
-    def _safe_decode(self, content: bytes) -> str:
+    def _safe_decode(self, content: bytes, file_name: str = "unknown") -> str:
         try:
             return content.decode("utf-8")
         except UnicodeDecodeError:
             logger.warning(
                 "UTF-8 decode failed for %s, falling back to latin-1",
-                file_name := "unknown",
+                file_name,
             )
             return content.decode("latin-1", errors="ignore")

@@ -16,6 +16,7 @@ dependencies = [
     "celery>=5.6.3",
     "redis>=7.4.0",
     "pytest>=9.0.2",
+    "docling>=2.82.0",
 ]
 
 [dependency-groups]

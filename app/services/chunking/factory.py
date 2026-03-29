@@ -5,6 +5,7 @@ from typing import Type
 
 from app.services.chunking.base import BaseChunker
 from app.services.chunking.strategies.fixed_window_chunker import FixedWindowChunker
+from app.services.chunking.strategies.pdf_chunker import PDFChunker
 from app.services.chunking.strategies.section_chunker import SectionChunker
 
 logger = logging.getLogger(__name__)
@@ -23,6 +24,7 @@ class ChunkerFactory:
     _registry: dict[str, Type[BaseChunker]] = {
         "fixed": FixedWindowChunker,
         "section": SectionChunker,
+        "pdf": PDFChunker,
     }
 
     _default_strategy = "fixed"

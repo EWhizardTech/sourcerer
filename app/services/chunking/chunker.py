@@ -12,7 +12,11 @@ def chunk_document(parsed_doc, metadata, file_id):
     Automatically selects chunking strategy based on document structure.
     """
 
-    if parsed_doc.get("sections"):
+    parser_type = parsed_doc.get("metadata", {}).get("parser")
+
+    if parser_type == "pdf":
+        strategy = "pdf"
+    elif parsed_doc.get("sections"):
         strategy = "section"
     else:
         strategy = "fixed"

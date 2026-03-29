@@ -3,6 +3,7 @@
 import logging
 
 from app.services.parsing.strategies.markdown_parser import MarkdownParser
+from app.services.parsing.strategies.pdf_parser import PDFParser
 from app.services.parsing.strategies.text_parser import TextParser
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ class ParserFactory:
         "text/plain": TextParser,
         "text/csv": TextParser,
         "text/markdown": MarkdownParser,
+        "application/pdf": PDFParser,
     }
 
     @classmethod

@@ -4,6 +4,8 @@ from pathlib import Path
 from datetime import datetime
 import json
 
+import pytest
+
 from app.services.parsing.factory import ParserFactory
 from app.services.chunking.chunker import chunk_document
 
@@ -82,6 +84,26 @@ def test_md_parser_and_chunker():
     assert out_file.exists()
 
 
+@pytest.mark.parametrize(
+    "file_path",
+    list((SAMPLES_DIR / "pdfs").glob("*.pdf"))
+)
+def test_pdf_parser_and_chunker(file_path: Path):
+    parser = ParserFactory.get_parser("application/pdf")
+
+    content = load_file_bytes(file_path)
+    parsed = parser.parse(content, file_path.name)
+
+    assert parsed["text"].strip() != ""
+    assert isinstance(parsed["sections"], list)
+
+    chunks = chunk_document(parsed, {}, file_path.stem)
+
+    out_file = write_parsed_and_chunks(file_path.name, parsed, chunks)
+
+    assert len(chunks) > 0
+    assert out_file.exists()
+    
 # {
 #   "folder_id": "1_3t3KGlDTwQypF8LO-mHKVv5n2bp3ZRg",
 #   "course_code": "TEST101",

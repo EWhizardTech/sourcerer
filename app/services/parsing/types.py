@@ -14,3 +14,8 @@ class ParsedDocument(TypedDict):
     images: List[Dict[str, Any]]
     external_content: List[str]
     metadata: Dict[str, Any]
+
+    tables: List[Dict[str, Any]]
+    images: List[Dict[str, Any]]
+    lists: List[Dict[str, Any]]
+    

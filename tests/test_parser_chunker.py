@@ -1,14 +1,13 @@
 # tests/test_parser_chunker.py
 
-from pathlib import Path
-from datetime import datetime
 import json
+from datetime import datetime
+from pathlib import Path
 
 import pytest
 
-from app.services.parsing.factory import ParserFactory
 from app.services.chunking.chunker import chunk_document
-
+from app.services.parsing.factory import ParserFactory
 
 SAMPLES_DIR = Path(__file__).parent / "samples"
 RESULTS_DIR = Path(__file__).parent / "results"
@@ -84,10 +83,7 @@ def test_md_parser_and_chunker():
     assert out_file.exists()
 
 
-@pytest.mark.parametrize(
-    "file_path",
-    list((SAMPLES_DIR / "pdfs").glob("*.pdf"))
-)
+@pytest.mark.parametrize("file_path", list((SAMPLES_DIR / "pdfs").glob("*.pdf")))
 def test_pdf_parser_and_chunker(file_path: Path):
     parser = ParserFactory.get_parser("application/pdf")
 
@@ -103,7 +99,8 @@ def test_pdf_parser_and_chunker(file_path: Path):
 
     assert len(chunks) > 0
     assert out_file.exists()
-    
+
+
 # {
 #   "folder_id": "1_3t3KGlDTwQypF8LO-mHKVv5n2bp3ZRg",
 #   "course_code": "TEST101",

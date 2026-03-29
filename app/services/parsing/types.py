@@ -18,4 +18,3 @@ class ParsedDocument(TypedDict):
     tables: List[Dict[str, Any]]
     images: List[Dict[str, Any]]
     lists: List[Dict[str, Any]]
-    

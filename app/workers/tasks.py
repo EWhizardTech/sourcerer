@@ -1,5 +1,4 @@
 import base64
-
 import logging
 
 from app.services.chunking.chunker import chunk_document
@@ -20,8 +19,6 @@ def process_file_task(file_id, file_name, mime_type, file_bytes, metadata):
 
     logging.info(f"Processed file {file_id} into {len(chunks)} chunks.")
 
-
     # Step 3 — Store chunks in the Qdrant database (this is a placeholder, implement as needed)
-
 
     return {"file_id": file_id, "chunks": len(chunks)}

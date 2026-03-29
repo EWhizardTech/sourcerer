@@ -37,7 +37,9 @@ class SectionChunker(BaseChunker):
                     content = "\n".join(content)
 
                 # Keep heading context in the chunk text for better retrieval quality.
-                section_text = "\n".join(part for part in [heading, content] if part).strip()
+                section_text = "\n".join(
+                    part for part in [heading, content] if part
+                ).strip()
 
                 # Structural sections can be sparse; still emit one chunk so each parsed
                 # section is represented downstream.

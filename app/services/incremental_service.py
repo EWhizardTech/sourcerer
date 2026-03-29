@@ -1,6 +1,6 @@
 """Incremental processing service for Sourcerer.
 
-Handles file hashing, tracking file processing status in SQLite, 
+Handles file hashing, tracking file processing status in SQLite,
 and managing vector deletion in Qdrant for updated files.
 """
 
@@ -12,7 +12,7 @@ from pathlib import Path
 
 from qdrant_client import QdrantClient, models
 
-from app.config import settings
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -34,15 +34,13 @@ class IncrementalService:
         """Initialize SQLite database and tracking table."""
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(self.db_path) as conn:
-            conn.execute(
-                """
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS file_tracking (
                     file_id TEXT PRIMARY KEY,
                     file_hash TEXT NOT NULL,
                     last_processed_at TEXT NOT NULL
                 )
-                """
-            )
+                """)
             conn.commit()
         logger.info("Initialized tracking database at %s", self.db_path)
 
@@ -59,7 +57,9 @@ class IncrementalService:
                     "Euclid": models.Distance.EUCLID,
                     "Dot": models.Distance.DOT,
                 }
-                distance = distance_map.get(settings.qdrant_distance, models.Distance.COSINE)
+                distance = distance_map.get(
+                    settings.qdrant_distance, models.Distance.COSINE
+                )
 
                 self.qdrant_client.create_collection(
                     collection_name=self.collection_name,
@@ -81,11 +81,11 @@ class IncrementalService:
 
     def check_file_status(self, file_id: str, file_hash: str) -> str:
         """Determine if a file is NEW, SKIP, or UPDATE.
-        
+
         Args:
             file_id: Stable identifier for the file.
             file_hash: Current computed hash of the file content.
-            
+
         Returns:
             "NEW", "SKIP", or "UPDATE".
         """
@@ -97,20 +97,24 @@ class IncrementalService:
 
         if not row:
             return "NEW"
-        
+
         stored_hash = row[0]
         if stored_hash == file_hash:
             return "SKIP"
-        
+
         return "UPDATE"
 
     def delete_existing_vectors(self, file_id: str):
         """Delete existing vectors for a file from Qdrant.
-        
+
         Args:
             file_id: File ID to filter by in Qdrant point payloads.
         """
-        logger.info("Deleting existing vectors for file_id=%s from %s", file_id, self.collection_name)
+        logger.info(
+            "Deleting existing vectors for file_id=%s from %s",
+            file_id,
+            self.collection_name,
+        )
         try:
             self.qdrant_client.delete(
                 collection_name=self.collection_name,
@@ -131,7 +135,7 @@ class IncrementalService:
 
     def update_tracking_record(self, file_id: str, file_hash: str):
         """Update tracking store with new hash and timestamp.
-        
+
         Should only be called AFTER successful processing of the file.
         """
         now = datetime.now().isoformat()

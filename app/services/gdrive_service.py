@@ -21,7 +21,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
-from app.config import settings
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -62,12 +62,12 @@ _GOOGLE_EXPORT_MAP: dict[str, tuple[str, str]] = {
 class FileRecord(TypedDict):
     """Structured record for a single ingested file."""
 
-    file_id: str       # Stable Google Drive fileId.
-    file_name: str     # Original file name.
-    mime_type: str     # MIME type (after export if applicable).
-    file_path: str     # Full breadcrumb path: "Folder / Sub / file.pdf".
+    file_id: str  # Stable Google Drive fileId.
+    file_name: str  # Original file name.
+    mime_type: str  # MIME type (after export if applicable).
+    file_path: str  # Full breadcrumb path: "Folder / Sub / file.pdf".
     modified_time: str  # ISO8601 last-modified timestamp.
-    content: bytes     # Raw file bytes (in-memory download).
+    content: bytes  # Raw file bytes (in-memory download).
 
 
 def build_drive_client():
@@ -197,7 +197,9 @@ def _collect_files_recursive(
         visited: Set of already-visited folder IDs to guard against cycles.
     """
     if folder_id in visited:
-        logger.warning("Cycle detected — skipping already-visited folder: %s", folder_id)
+        logger.warning(
+            "Cycle detected — skipping already-visited folder: %s", folder_id
+        )
         return
     visited.add(folder_id)
 
@@ -205,9 +207,7 @@ def _collect_files_recursive(
 
     # ---- 1. Process all supported files in this folder --------------------
     file_query = (
-        f"'{folder_id}' in parents"
-        f" and ({_MIME_CONDITIONS})"
-        f" and trashed=false"
+        f"'{folder_id}' in parents" f" and ({_MIME_CONDITIONS})" f" and trashed=false"
     )
     page_token: str | None = None
 

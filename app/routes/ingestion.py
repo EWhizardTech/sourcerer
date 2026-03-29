@@ -14,6 +14,8 @@ from pydantic import BaseModel
 
 from app.services.gdrive_service import list_files_in_folder
 from app.services.metadata_service import extract_folder_metadata
+from app.workers.celery_app import celery
+from app.workers.tasks import process_file_task
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +60,11 @@ async def ingest_gdrive(request: IngestGDriveRequest) -> list[FileResponse]:
     Raises:
         HTTPException 500: If the Drive API call fails.
     """
-    logger.info("Received ingest request for folder_id=%s (course=%s)", request.folder_id, request.course_code)
+    logger.info(
+        "Received ingest request for folder_id=%s (course=%s)",
+        request.folder_id,
+        request.course_code,
+    )
 
     try:
         records = list_files_in_folder(request.folder_id)
@@ -90,5 +96,13 @@ async def ingest_gdrive(request: IngestGDriveRequest) -> list[FileResponse]:
                 folder_metadata=metadata,
             )
         )
-    
+
+        process_file_task.delay(
+            file_id=r["file_id"],
+            file_name=r["file_name"],
+            mime_type=r["mime_type"],
+            file_bytes=base64.b64encode(r["content"]).decode(),
+            metadata=metadata,
+        )
+
     return results

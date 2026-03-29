@@ -12,17 +12,15 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.services.gdrive_service import (
-    _get_folder_path,
-    _collect_files_recursive,
-    list_files_in_folder,
-    SUPPORTED_MIME_TYPES,
-)
-
+from app.services.gdrive_service import (SUPPORTED_MIME_TYPES,
+                                         _collect_files_recursive,
+                                         _get_folder_path,
+                                         list_files_in_folder)
 
 # ---------------------------------------------------------------------------
 # _get_folder_path
 # ---------------------------------------------------------------------------
+
 
 def test_get_folder_path_single_level():
     """Should return just the folder name when there are no parents."""
@@ -61,12 +59,11 @@ def test_get_folder_path_nested():
 # list_files_in_folder — filtering
 # ---------------------------------------------------------------------------
 
+
 @patch("app.services.gdrive_service.build_drive_client")
 @patch("app.services.gdrive_service._download_file")
 @patch("app.services.gdrive_service._get_folder_path")
-def test_list_files_returns_supported_files(
-    mock_path, mock_download, mock_build
-):
+def test_list_files_returns_supported_files(mock_path, mock_download, mock_build):
     """Should return a FileRecord for each supported MIME type file."""
     mock_path.return_value = "Root / Folder"
     mock_download.return_value = b"fake content"
@@ -103,9 +100,7 @@ def test_list_files_returns_supported_files(
 @patch("app.services.gdrive_service.build_drive_client")
 @patch("app.services.gdrive_service._download_file")
 @patch("app.services.gdrive_service._get_folder_path")
-def test_list_files_skips_failed_downloads(
-    mock_path, mock_download, mock_build
-):
+def test_list_files_skips_failed_downloads(mock_path, mock_download, mock_build):
     """Should skip a file if download raises, not abort the whole batch."""
     mock_path.return_value = "Root"
     mock_download.side_effect = [Exception("network error"), b"ok"]
@@ -113,8 +108,18 @@ def test_list_files_skips_failed_downloads(
     service = MagicMock()
     service.files().list().execute.return_value = {
         "files": [
-            {"id": "bad", "name": "bad.pdf", "mimeType": "application/pdf", "modifiedTime": ""},
-            {"id": "good", "name": "good.txt", "mimeType": "text/plain", "modifiedTime": ""},
+            {
+                "id": "bad",
+                "name": "bad.pdf",
+                "mimeType": "application/pdf",
+                "modifiedTime": "",
+            },
+            {
+                "id": "good",
+                "name": "good.txt",
+                "mimeType": "text/plain",
+                "modifiedTime": "",
+            },
         ],
         "nextPageToken": None,
     }
@@ -129,6 +134,7 @@ def test_list_files_skips_failed_downloads(
 # ---------------------------------------------------------------------------
 # Supported MIME types set
 # ---------------------------------------------------------------------------
+
 
 def test_supported_mime_types_covered():
     """Ensure the four primary types are in the supported set."""
@@ -147,6 +153,7 @@ def test_supported_mime_types_covered():
 # ---------------------------------------------------------------------------
 # Recursive traversal
 # ---------------------------------------------------------------------------
+
 
 @patch("app.services.gdrive_service._download_file")
 def test_collect_files_recursive_enters_subfolders(mock_download):
@@ -172,12 +179,14 @@ def test_collect_files_recursive_enters_subfolders(mock_download):
         else:
             # File listing: one PDF wherever we are.
             m.execute.return_value = {
-                "files": [{
-                    "id": "file-a",
-                    "name": "a.pdf",
-                    "mimeType": "application/pdf",
-                    "modifiedTime": "2024-01-01T00:00:00Z",
-                }],
+                "files": [
+                    {
+                        "id": "file-a",
+                        "name": "a.pdf",
+                        "mimeType": "application/pdf",
+                        "modifiedTime": "2024-01-01T00:00:00Z",
+                    }
+                ],
                 "nextPageToken": None,
             }
         return m

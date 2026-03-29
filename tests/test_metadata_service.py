@@ -1,6 +1,7 @@
 """Unit tests for metadata_service.py."""
 
 import pytest
+
 from app.services.metadata_service import extract_folder_metadata
 
 
@@ -8,7 +9,7 @@ def test_extract_folder_metadata_basic():
     """Should extract tags correctly from a standard path."""
     file_path = "Root / Folder / Sub / file.pdf"
     metadata = extract_folder_metadata(file_path, course_code="CS101", year="2024")
-    
+
     assert metadata["course_code"] == "CS101"
     assert metadata["year"] == "2024"
     # Root is excluded by default
@@ -19,7 +20,7 @@ def test_extract_folder_metadata_include_root():
     """Should include root folder if include_root is True."""
     file_path = "Root / Folder / Sub / file.pdf"
     metadata = extract_folder_metadata(file_path, include_root=True)
-    
+
     assert metadata["tags"] == ["root", "folder", "sub"]
 
 

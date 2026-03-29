@@ -12,6 +12,10 @@ dependencies = [
     "python-dotenv>=1.2.2",
     "uvicorn>=0.42.0",
     "qdrant-client>=1.13.2",
+    "pydantic>=2.12.5",
+    "celery>=5.6.3",
+    "redis>=7.4.0",
+    "pytest>=9.0.2",
 ]
 
 [dependency-groups]

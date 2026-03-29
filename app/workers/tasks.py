@@ -1,13 +1,13 @@
 import base64
 
-from uvicorn import logging
+import logging
 
 from app.services.chunking.chunker import chunk_document
 from app.services.parsing.factory import ParserFactory
 from app.workers.celery_app import celery
 
 
-@celery.task
+@celery.task(name="process_file_task")
 def process_file_task(file_id, file_name, mime_type, file_bytes, metadata):
     content = base64.b64decode(file_bytes)
 

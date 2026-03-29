@@ -80,3 +80,11 @@ def test_md_parser_and_chunker():
     # Ensure sections influence chunking
     assert len(chunks) >= len(parsed["sections"])
     assert out_file.exists()
+
+
+# {
+#   "folder_id": "1_3t3KGlDTwQypF8LO-mHKVv5n2bp3ZRg",
+#   "course_code": "TEST101",
+#   "year": "2026",
+#   "include_root_as_tag": true
+# }

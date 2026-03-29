@@ -13,5 +13,4 @@ celery.conf.update(
     timezone="UTC",
 )
 
-if __name__ == "__main__":
-    celery.start()
+celery.autodiscover_tasks(["app.workers"])

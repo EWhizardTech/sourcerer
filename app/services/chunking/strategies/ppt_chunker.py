@@ -16,21 +16,13 @@ class PPTChunker(BaseChunker):
     Strategy:
     ┌──────────────────────────────────────────────────────────┐
     │  Each slide section → one or more text chunks            │
-    │  Each table in the doc → one table chunk                 │
-    │  Each list block → one list chunk                        │
-    │  Each image → one image chunk  (no text, no embedding)  │
+    │  Each table         → one table chunk                    │
+    │  Each list block    → one list chunk                     │
+    │  Each image         → one image chunk (no text, no mix)  │
     └──────────────────────────────────────────────────────────┘
 
-    Chunk-ID format  (deterministic):
-        <file_id>_text_<idx>
-        <file_id>_table_<idx>
-        <file_id>_list_<idx>
-        <file_id>_image_<idx>
-
-    Rules:
-    - NEVER mix image bytes with text in the same chunk
-    - Sections wider than chunk_size are split with word-window + overlap
-    - slide_number is forwarded into metadata when present
+    All chunk builders are inherited from BaseChunker.
+    slide_number is forwarded into metadata as page_number.
     """
 
     def chunk(
@@ -39,14 +31,13 @@ class PPTChunker(BaseChunker):
 
         chunks: List[Dict] = []
 
-        # independent counters per content type for stable IDs
         text_idx = 0
         table_idx = 0
         list_idx = 0
         image_idx = 0
 
         try:
-            # ── 1. Slide sections → text chunks ──────────────────────────
+            # ── 1. Slide sections → text chunks ───────────────────────────
             for section in parsed_doc.get("sections", []):
                 slide_number = section.get("slide_number")
 
@@ -57,17 +48,11 @@ class PPTChunker(BaseChunker):
                 if not combined:
                     continue
 
-                sub_chunks = split_words(combined, self.chunk_size, self.overlap)
-                for sub in sub_chunks:
-                    chunks.append(
-                        self._build_text_chunk(
-                            file_id=file_id,
-                            idx=text_idx,
-                            text=sub,
-                            metadata=metadata,
-                            slide_number=slide_number,
-                        )
-                    )
+                for sub in split_words(combined, self.chunk_size, self.overlap):
+                    chunk = self._build_chunk(file_id, text_idx, sub, metadata)
+                    if slide_number is not None:
+                        chunk["metadata"]["page_number"] = slide_number
+                    chunks.append(chunk)
                     text_idx += 1
 
             # ── 2. Tables ─────────────────────────────────────────────────
@@ -76,7 +61,6 @@ class PPTChunker(BaseChunker):
                 if not content:
                     continue
 
-                slide_number = table.get("slide_number")
                 chunks.append(
                     self._build_typed_chunk(
                         file_id=file_id,
@@ -84,7 +68,7 @@ class PPTChunker(BaseChunker):
                         idx=table_idx,
                         text=content,
                         metadata=metadata,
-                        slide_number=slide_number,
+                        page_number=table.get("slide_number"),
                     )
                 )
                 table_idx += 1
@@ -95,7 +79,6 @@ class PPTChunker(BaseChunker):
                 if not content:
                     continue
 
-                slide_number = lst.get("slide_number")
                 chunks.append(
                     self._build_typed_chunk(
                         file_id=file_id,
@@ -103,7 +86,7 @@ class PPTChunker(BaseChunker):
                         idx=list_idx,
                         text=content,
                         metadata=metadata,
-                        slide_number=slide_number,
+                        page_number=lst.get("slide_number"),
                     )
                 )
                 list_idx += 1
@@ -133,83 +116,3 @@ class PPTChunker(BaseChunker):
         except Exception as exc:
             logger.exception("PPT chunking failed for file_id=%s: %s", file_id, exc)
             return []
-
-    # ------------------------------------------------------------------ #
-    # Chunk builders
-    # ------------------------------------------------------------------ #
-
-    def _build_text_chunk(
-        self,
-        file_id: str,
-        idx: int,
-        text: str,
-        metadata: Dict[str, Any],
-        slide_number: int | None,
-    ) -> Dict[str, Any]:
-        chunk_meta = {
-            **metadata,
-            "file_id": file_id,
-            "content_type": "text",
-            "source": "document",
-        }
-        if slide_number is not None:
-            chunk_meta["page_number"] = slide_number  # slide ≡ page
-
-        return {
-            "chunk_id": f"{file_id}_text_{idx}",
-            "text": text,
-            "metadata": chunk_meta,
-        }
-
-    def _build_typed_chunk(
-        self,
-        file_id: str,
-        content_type: str,  # "table" | "list"
-        idx: int,
-        text: str,
-        metadata: Dict[str, Any],
-        slide_number: int | None,
-    ) -> Dict[str, Any]:
-        chunk_meta = {
-            **metadata,
-            "file_id": file_id,
-            "content_type": content_type,
-            "source": "document",
-        }
-        if slide_number is not None:
-            chunk_meta["page_number"] = slide_number
-
-        return {
-            "chunk_id": f"{file_id}_{content_type}_{idx}",
-            "text": text,
-            "metadata": chunk_meta,
-        }
-
-    def _build_image_chunk(
-        self,
-        file_id: str,
-        idx: int,
-        image: Dict[str, Any],
-        metadata: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        """
-        Image chunks carry NO text.
-        Structure mirrors the spec in 3-chunking.md exactly.
-        """
-        chunk_meta = {
-            **metadata,
-            "file_id": file_id,
-            "content_type": "image",
-            "source": "document",
-            "page_number": image.get("page_number"),  # slide number
-        }
-
-        return {
-            "chunk_id": f"{file_id}_image_{idx}",
-            "text": "",  # intentionally empty — embed via image bytes
-            "image": {
-                "image_id": image.get("image_id"),
-                "image_bytes": image.get("image_bytes"),
-            },
-            "metadata": chunk_meta,
-        }

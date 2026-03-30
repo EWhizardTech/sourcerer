@@ -18,6 +18,8 @@ def chunk_document(parsed_doc, metadata, file_id):
         strategy = "pdf"
     elif parser_type == "ppt":
         strategy = "ppt"
+    elif parser_type == "docx":
+        strategy = "docx"
     elif parsed_doc.get("sections"):
         strategy = "section"
     else:

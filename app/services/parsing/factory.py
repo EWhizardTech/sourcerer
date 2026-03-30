@@ -2,6 +2,7 @@
 
 import logging
 
+from app.services.parsing.strategies.docx_parser import DOCXParser
 from app.services.parsing.strategies.markdown_parser import MarkdownParser
 from app.services.parsing.strategies.pdf_parser import PDFParser
 from app.services.parsing.strategies.ppt_parser import PPTParser
@@ -23,7 +24,9 @@ class ParserFactory:
         "text/markdown": MarkdownParser,
         "application/pdf": PDFParser,
         "application/vnd.ms-powerpoint": PPTParser,
-    "application/vnd.openxmlformats-officedocument.presentationml.presentation": PPTParser,
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation": PPTParser,
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": DOCXParser,
+        "application/msword": DOCXParser,
     }
 
     @classmethod

@@ -1,5 +1,6 @@
 # tests/test_parser_chunker.py
 
+from collections import Counter
 import json
 from datetime import datetime
 from pathlib import Path
@@ -138,9 +139,72 @@ def test_ppt_parser_and_chunker(file_path: Path):
     assert out_file.exists()
 
 
+@pytest.mark.parametrize("file_path", list((SAMPLES_DIR / "docx").glob("*.docx")))
+def test_docx_parser_and_chunker(file_path: Path):
+    parser = ParserFactory.get_parser(
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+
+    content = load_file_bytes(file_path)
+    parsed = parser.parse(content, file_path.name)
+
+    assert isinstance(parsed["sections"], list)
+    assert isinstance(parsed["tables"], list)
+    assert isinstance(parsed["images"], list)
+    assert isinstance(parsed["lists"], list)
+    assert parsed["metadata"]["parser"] == "docx"
+
+    chunks = chunk_document(parsed, {}, file_path.stem)
+    out_file = write_parsed_and_chunks(file_path.name, parsed, chunks)
+
+    assert len(chunks) > 0
+    assert all("chunk_id" in c for c in chunks)
+
+    # --------- PRINT TOTAL CHUNKS ----------
+    print(f"\nTotal chunks: {len(chunks)}")
+
+    # --------- PARSED ITEMS TABLE ----------
+    parsed_counts = {
+        "sections": len(parsed.get("sections", [])),
+        "tables": len(parsed.get("tables", [])),
+        "images": len(parsed.get("images", [])),
+        "lists": len(parsed.get("lists", [])),
+    }
+
+    print("\nParsed Items Summary:")
+    print(f"{'Type':<10} | {'Count':<5}")
+    print("-" * 20)
+    for k, v in parsed_counts.items():
+        print(f"{k:<10} | {v:<5}")
+
+    # --------- CHUNK TYPE DISTRIBUTION ----------
+    chunk_types = Counter(c["metadata"]["content_type"] for c in chunks)
+
+    print("\nChunk Type Distribution:")
+    print(f"{'Type':<10} | {'Count':<5}")
+    print("-" * 20)
+    for k, v in chunk_types.items():
+        print(f"{k:<10} | {v:<5}")
+
+    # image chunks must never have text
+    image_chunks = [c for c in chunks if c["metadata"]["content_type"] == "image"]
+    for ic in image_chunks:
+        assert ic["text"] == ""
+        assert "image" in ic
+        assert ic["image"]["image_bytes"] is not None
+
+    # text chunks must never carry image bytes
+    text_chunks = [c for c in chunks if c["metadata"]["content_type"] == "text"]
+    for tc in text_chunks:
+        assert "image" not in tc
+        assert tc["text"].strip() != ""
+
+    assert out_file.exists()
+
 # {
 #   "folder_id": "1_3t3KGlDTwQypF8LO-mHKVv5n2bp3ZRg",
 #   "course_code": "TEST101",
 #   "year": "2026",
 #   "include_root_as_tag": true
 # }
+# 1rBUfr0TNWevkIoYhJ1k9lcoJb9xTXzTD

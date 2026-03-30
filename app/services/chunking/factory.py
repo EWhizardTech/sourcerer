@@ -4,6 +4,7 @@ import logging
 from typing import Type
 
 from app.services.chunking.base import BaseChunker
+from app.services.chunking.strategies.docx_chunker import DOCXChunker
 from app.services.chunking.strategies.fixed_window_chunker import \
     FixedWindowChunker
 from app.services.chunking.strategies.pdf_chunker import PDFChunker
@@ -27,7 +28,8 @@ class ChunkerFactory:
         "fixed": FixedWindowChunker,
         "section": SectionChunker,
         "pdf": PDFChunker,
-        "ppt": PPTChunker, 
+        "ppt": PPTChunker,
+        "docx": DOCXChunker,
     }
 
     _default_strategy = "fixed"

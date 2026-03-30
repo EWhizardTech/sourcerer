@@ -108,9 +108,7 @@ class PPTParser(BaseParser):
     # Primary: python-pptx
     # ------------------------------------------------------------------ #
 
-    def _parse_with_pptx(
-        self, content: bytes, file_name: str
-    ) -> Dict[str, Any]:
+    def _parse_with_pptx(self, content: bytes, file_name: str) -> Dict[str, Any]:
         from pptx import Presentation
         from pptx.enum.shapes import MSO_SHAPE_TYPE
 
@@ -155,14 +153,11 @@ class PPTParser(BaseParser):
                     continue
 
                 # ---- IMAGE -----------------------------------------------
-                if (
-                    shape.shape_type == MSO_SHAPE_TYPE.PICTURE
-                    or hasattr(shape, "image")
+                if shape.shape_type == MSO_SHAPE_TYPE.PICTURE or hasattr(
+                    shape, "image"
                 ):
                     try:
-                        image_entry = self._extract_image(
-                            shape, slide_idx, shape_idx
-                        )
+                        image_entry = self._extract_image(shape, slide_idx, shape_idx)
                         if image_entry:
                             images.append(image_entry)
                     except Exception as img_exc:
@@ -244,7 +239,9 @@ class PPTParser(BaseParser):
 
             for slide_idx, slide_file in enumerate(slide_files, start=1):
                 xml_bytes = zf.read(slide_file)
-                slide_text = self._strip_xml_tags(xml_bytes.decode("utf-8", errors="ignore"))
+                slide_text = self._strip_xml_tags(
+                    xml_bytes.decode("utf-8", errors="ignore")
+                )
 
                 if slide_text.strip():
                     sections.append(
@@ -338,12 +335,13 @@ class PPTParser(BaseParser):
             return ""
 
         col_widths = [
-            max(len(rows[r][c]) for r in range(len(rows)))
-            for c in range(len(rows[0]))
+            max(len(rows[r][c]) for r in range(len(rows))) for c in range(len(rows[0]))
         ]
 
         def fmt_row(cells: List[str]) -> str:
-            return "| " + " | ".join(c.ljust(w) for c, w in zip(cells, col_widths)) + " |"
+            return (
+                "| " + " | ".join(c.ljust(w) for c, w in zip(cells, col_widths)) + " |"
+            )
 
         separator = "|-" + "-|-".join("-" * w for w in col_widths) + "-|"
 
@@ -363,7 +361,7 @@ class PPTParser(BaseParser):
         return {
             "image_id": f"slide{slide_idx}_shape{shape_idx}.{ext}",
             "image_bytes": image_bytes_b64,
-            "page_number": slide_idx,       # "page" = slide for consistency
+            "page_number": slide_idx,  # "page" = slide for consistency
             "content_type": image.content_type,
         }
 

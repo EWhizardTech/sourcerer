@@ -145,14 +145,14 @@ class DOCXChunker(BaseChunker):
                 "file_id": file_id,
                 "content_type": "text",
                 "source": "document",
-                "page_number": None,   # DOCX has no page-level concept
+                "page_number": None,  # DOCX has no page-level concept
             },
         }
 
     def _build_typed_chunk(
         self,
         file_id: str,
-        content_type: str,   # "table" | "list"
+        content_type: str,  # "table" | "list"
         idx: int,
         text: str,
         metadata: Dict[str, Any],
@@ -182,7 +182,7 @@ class DOCXChunker(BaseChunker):
         """
         return {
             "chunk_id": f"{file_id}_image_{idx}",
-            "text": "",          # intentionally empty — embed via image bytes
+            "text": "",  # intentionally empty — embed via image bytes
             "image": {
                 "image_id": image.get("image_id"),
                 "image_bytes": image.get("image_bytes"),
@@ -192,6 +192,6 @@ class DOCXChunker(BaseChunker):
                 "file_id": file_id,
                 "content_type": "image",
                 "source": "document",
-                "page_number": image.get("page_number"),   # None for DOCX
+                "page_number": image.get("page_number"),  # None for DOCX
             },
         }

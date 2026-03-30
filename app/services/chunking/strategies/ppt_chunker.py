@@ -153,7 +153,7 @@ class PPTChunker(BaseChunker):
             "source": "document",
         }
         if slide_number is not None:
-            chunk_meta["page_number"] = slide_number   # slide ≡ page
+            chunk_meta["page_number"] = slide_number  # slide ≡ page
 
         return {
             "chunk_id": f"{file_id}_text_{idx}",
@@ -164,7 +164,7 @@ class PPTChunker(BaseChunker):
     def _build_typed_chunk(
         self,
         file_id: str,
-        content_type: str,   # "table" | "list"
+        content_type: str,  # "table" | "list"
         idx: int,
         text: str,
         metadata: Dict[str, Any],
@@ -201,12 +201,12 @@ class PPTChunker(BaseChunker):
             "file_id": file_id,
             "content_type": "image",
             "source": "document",
-            "page_number": image.get("page_number"),   # slide number
+            "page_number": image.get("page_number"),  # slide number
         }
 
         return {
             "chunk_id": f"{file_id}_image_{idx}",
-            "text": "",          # intentionally empty — embed via image bytes
+            "text": "",  # intentionally empty — embed via image bytes
             "image": {
                 "image_id": image.get("image_id"),
                 "image_bytes": image.get("image_bytes"),

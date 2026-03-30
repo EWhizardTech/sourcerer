@@ -1,7 +1,7 @@
 # tests/test_parser_chunker.py
 
-from collections import Counter
 import json
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 
@@ -200,6 +200,7 @@ def test_docx_parser_and_chunker(file_path: Path):
         assert tc["text"].strip() != ""
 
     assert out_file.exists()
+
 
 # {
 #   "folder_id": "1_3t3KGlDTwQypF8LO-mHKVv5n2bp3ZRg",

@@ -122,9 +122,7 @@ class DOCXParser(BaseParser):
     # Primary: python-docx
     # ------------------------------------------------------------------ #
 
-    def _parse_with_docx(
-        self, content: bytes, file_name: str
-    ) -> Dict[str, Any]:
+    def _parse_with_docx(self, content: bytes, file_name: str) -> Dict[str, Any]:
         from docx import Document
         from docx.oxml.ns import qn
 
@@ -278,8 +276,7 @@ class DOCXParser(BaseParser):
         # Split into pseudo-sections on double newlines
         chunks = [p.strip() for p in text.split("\n\n") if p.strip()]
         sections = [
-            {"type": "section", "heading": None, "content": chunk}
-            for chunk in chunks
+            {"type": "section", "heading": None, "content": chunk} for chunk in chunks
         ]
 
         return "\n\n".join(chunks), sections
@@ -337,7 +334,7 @@ class DOCXParser(BaseParser):
                 {
                     "image_id": image_id,
                     "image_bytes": base64.b64encode(blob).decode("utf-8"),
-                    "page_number": None,   # DOCX has no page-level concept
+                    "page_number": None,  # DOCX has no page-level concept
                     "content_type": f"image/{ext}",
                 }
             )
@@ -378,15 +375,12 @@ class DOCXParser(BaseParser):
         rows = [r + [""] * (col_count - len(r)) for r in rows]
 
         col_widths = [
-            max(len(rows[r][c]) for r in range(len(rows)))
-            for c in range(col_count)
+            max(len(rows[r][c]) for r in range(len(rows))) for c in range(col_count)
         ]
 
         def fmt_row(cells: List[str]) -> str:
             return (
-                "| "
-                + " | ".join(c.ljust(w) for c, w in zip(cells, col_widths))
-                + " |"
+                "| " + " | ".join(c.ljust(w) for c, w in zip(cells, col_widths)) + " |"
             )
 
         separator = "|-" + "-|-".join("-" * w for w in col_widths) + "-|"

@@ -1,7 +1,11 @@
+# syntax=docker/dockerfile:1
+
 FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+
+ARG TORCH_EXTRA_INDEX=
 
 WORKDIR /app
 
@@ -10,8 +14,11 @@ RUN pip install --no-cache-dir uv
 COPY pyproject.toml uv.lock* ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-dev \
-    --extra-index-url https://download.pytorch.org/whl/cu126
+    if [ -n "$TORCH_EXTRA_INDEX" ]; then \
+        uv sync --no-dev --extra-index-url "$TORCH_EXTRA_INDEX"; \
+    else \
+        uv sync --no-dev; \
+    fi
 
 ENV PATH="/app/.venv/bin:$PATH"
 

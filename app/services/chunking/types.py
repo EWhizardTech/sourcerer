@@ -5,13 +5,13 @@ from typing import Any, Dict, List, Optional, TypedDict
 
 class ImageRef(TypedDict):
     image_id: str
-    image_bytes: str          # base64-encoded
+    image_bytes: str  # base64-encoded
 
 
 class ChunkMetadata(TypedDict, total=False):
     file_id: str
-    source: str               # "document" | "transcript"
-    content_type: str         # "text" | "table" | "list" | "image"
+    source: str  # "document" | "transcript"
+    content_type: str  # "text" | "table" | "list" | "image"
     page_number: Optional[int]
     course_code: str
     year: str
@@ -24,6 +24,7 @@ class ChunkMetadata(TypedDict, total=False):
 
 class TextChunk(TypedDict):
     """Text, table, or list chunk — always has 'text', never has 'image'."""
+
     chunk_id: str
     text: str
     metadata: ChunkMetadata
@@ -31,6 +32,7 @@ class TextChunk(TypedDict):
 
 class ImageChunk(TypedDict):
     """Image chunk — NO 'text' key per spec."""
+
     chunk_id: str
     image: ImageRef
     metadata: ChunkMetadata

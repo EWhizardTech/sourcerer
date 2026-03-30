@@ -104,7 +104,7 @@ class BaseChunker(ABC):
                 "image_bytes": image.get("image_bytes"),
             },
             "metadata": {
-                **metadata,                        # course_code, year, tags, etc.
+                **metadata,  # course_code, year, tags, etc.
                 "file_id": file_id,
                 "source": "document",
                 "content_type": "image",

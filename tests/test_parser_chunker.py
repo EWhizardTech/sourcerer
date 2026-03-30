@@ -167,6 +167,7 @@ def test_docx_parser_and_chunker(file_path: Path):
 
     append_results("test_docx_parser_and_chunker", file_path.name, parsed, chunks)
 
+
 # {
 #   "folder_id": "1_3t3KGlDTwQypF8LO-mHKVv5n2bp3ZRg",
 #   "course_code": "TEST101",

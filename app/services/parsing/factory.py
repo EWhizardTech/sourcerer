@@ -4,6 +4,7 @@ import logging
 
 from app.services.parsing.strategies.markdown_parser import MarkdownParser
 from app.services.parsing.strategies.pdf_parser import PDFParser
+from app.services.parsing.strategies.ppt_parser import PPTParser
 from app.services.parsing.strategies.text_parser import TextParser
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,8 @@ class ParserFactory:
         "text/csv": TextParser,
         "text/markdown": MarkdownParser,
         "application/pdf": PDFParser,
+        "application/vnd.ms-powerpoint": PPTParser,
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": PPTParser,
     }
 
     @classmethod

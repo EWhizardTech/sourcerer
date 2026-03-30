@@ -101,6 +101,43 @@ def test_pdf_parser_and_chunker(file_path: Path):
     assert out_file.exists()
 
 
+@pytest.mark.parametrize("file_path", list((SAMPLES_DIR / "ppts").glob("*.pptx")))
+def test_ppt_parser_and_chunker(file_path: Path):
+    parser = ParserFactory.get_parser(
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    )
+
+    content = load_file_bytes(file_path)
+    parsed = parser.parse(content, file_path.name)
+
+    assert isinstance(parsed["sections"], list)
+    assert isinstance(parsed["tables"], list)
+    assert isinstance(parsed["images"], list)
+    assert isinstance(parsed["lists"], list)
+    assert parsed["metadata"]["parser"] == "ppt"
+
+    chunks = chunk_document(parsed, {}, file_path.stem)
+    out_file = write_parsed_and_chunks(file_path.name, parsed, chunks)
+
+    assert len(chunks) > 0
+    assert all("chunk_id" in c for c in chunks)
+
+    # image chunks must never have text
+    image_chunks = [c for c in chunks if c["metadata"]["content_type"] == "image"]
+    for ic in image_chunks:
+        assert ic["text"] == ""
+        assert "image" in ic
+        assert ic["image"]["image_bytes"] is not None
+
+    # text chunks must never carry image bytes
+    text_chunks = [c for c in chunks if c["metadata"]["content_type"] == "text"]
+    for tc in text_chunks:
+        assert "image" not in tc
+        assert tc["text"].strip() != ""
+
+    assert out_file.exists()
+
+
 # {
 #   "folder_id": "1_3t3KGlDTwQypF8LO-mHKVv5n2bp3ZRg",
 #   "course_code": "TEST101",

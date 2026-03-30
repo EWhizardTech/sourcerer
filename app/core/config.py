@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     qdrant_vector_size: int = 768  # Gemini Embeddings default
     qdrant_distance: str = "Cosine"
 
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_BACKEND_URL: str = "redis://localhost:6379/1"
+
     # Tracking DB configuration
     db_path: str = "data/sourcerer.db"
 

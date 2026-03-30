@@ -2,7 +2,10 @@ name: sourcerer_backend
 
 services:
   api:
-    build: .
+    build:
+      context: .
+      cache_from:
+        - premdharshan/sourcerer-base:latest
     restart: unless-stopped
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     depends_on:
@@ -13,12 +16,17 @@ services:
       - .env
 
   worker:
-    build: .
+    build:
+      context: .
+      cache_from:
+        - premdharshan/sourcerer-base:latest
     command: celery -A app.workers.celery_app.celery worker --loglevel=info
     depends_on:
       - redis
     env_file:
       - .env
+    args:
+      TORCH_EXTRA_INDEX: https://download.pytorch.org/whl/cu126
 
   redis:
     image: redis:latest

@@ -10,3 +10,4 @@ __pycache__/
 tests/
 node_modules/
 .venv/
+docker-compose*.yml

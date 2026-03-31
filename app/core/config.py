@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     qdrant_api_key: str
     qdrant_cluster_endpoint: str
     qdrant_collection_name: str = "sourcerer_collection"
-    qdrant_vector_size: int = 768  # Gemini Embeddings default
+    qdrant_vector_size: int = 3072  # Gemini Embeddings 2 default
     qdrant_distance: str = "Cosine"
 
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # Groq configuration for tagging
     groq_api_key: str
     groq_model: str = "llama-3.1-8b-instant"
+
+    # Gemini configuration for embedding
+    gemini_api_key: str = None
+    max_image_embedding_size: int = 10 * 1024 * 1024  # 10MB default
 
     model_config = SettingsConfigDict(
         env_file=".env",

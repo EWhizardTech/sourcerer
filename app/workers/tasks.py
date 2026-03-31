@@ -4,6 +4,7 @@ import logging
 from app.services.chunking.chunker import chunk_document
 from app.services.parsing.factory import ParserFactory
 from app.services.tagging.tagging_service import tag_chunks
+from app.services.embedding.embedding_service import EmbeddingService
 from app.workers.celery_app import celery
 
 
@@ -21,9 +22,13 @@ def process_file_task(file_id, file_name, mime_type, file_bytes, metadata):
     
     # STEP 3 — Tagging (LLM)
     tagged_chunks = tag_chunks(chunks)
-
     logging.info(f"Processed file {file_id}: {len(chunks)} chunks tagged.")
 
-    # Step 4 — Store chunks in the Qdrant database (upcoming Stage 8)
+    # STEP 4 — Embedding (Multimodal)
+    embedding_service = EmbeddingService()
+    embedded_chunks = embedding_service.embed_chunks(tagged_chunks)
+    logging.info(f"Processed file {file_id}: {len(embedded_chunks)} chunks embedded.")
 
-    return {"file_id": file_id, "chunks": len(tagged_chunks)}
+    # Step 5 — Store chunks in the Qdrant database (upcoming Stage 8)
+
+    return {"file_id": file_id, "chunks": len(embedded_chunks)}

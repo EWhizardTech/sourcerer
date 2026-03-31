@@ -11,12 +11,14 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.services.parsing.factory import ParserFactory
 from app.services.chunking.chunker import chunk_document
 from app.services.tagging.tagging_service import tag_chunks
+from app.services.embedding.embedding_service import EmbeddingService
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(name)s: %(message)s')
 
 def test_full_pipeline(file_path: str):
-    """Runs the pipeline synchronously for a local file: Parse -> Chunk -> Tag."""
+    """Runs the pipeline synchronously for a local file: Parse -> Chunk -> Tag -> Embed."""
     
     if not os.path.exists(file_path):
         print(f"Error: File not found: {file_path}")
@@ -52,14 +54,23 @@ def test_full_pipeline(file_path: str):
 
     print(f"\n--- [3] TAGGING ---")
     tagged_chunks = tag_chunks(chunks)
+    print(f"Tagged {len(tagged_chunks)} chunks.")
+
+    print(f"\n--- [4] EMBEDDING ---")
+    embedding_service = EmbeddingService()
+    embedded_chunks = embedding_service.embed_chunks(tagged_chunks)
+    print(f"Generated embeddings for {len(embedded_chunks)} chunks.")
     
     # Show results for the first few chunks
-    for i, chunk in enumerate(tagged_chunks[:3]):
+    for i, chunk in enumerate(embedded_chunks[:2]):
         print(f"\nChunk {i+1} Result:")
-        print(json.dumps(chunk, indent=2))
+        short_vector = [round(v, 4) for v in chunk["dense_vector"][:5]]
+        print(f"  Chunk ID: {chunk['chunk_id']}")
+        print(f"  Vector (first 5): {short_vector} ... (total: {len(chunk['dense_vector'])})")
+        print(f"  Tags: {json.dumps(chunk['tags'], indent=2)}")
     
-    if len(tagged_chunks) > 3:
-        print(f"\n... and {len(tagged_chunks)-3} more chunks.")
+    if len(embedded_chunks) > 2:
+        print(f"\n... and {len(embedded_chunks)-2} more chunks.")
 
     print(f"\nPipeline test complete for {file_name}.")
 

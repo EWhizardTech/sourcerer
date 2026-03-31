@@ -20,6 +20,7 @@ dependencies = [
     "pymupdf>=1.26.5",
     "fitz>=0.0.1.dev2",
     "groq>=1.1.2",
+    "google-genai>=1.69.0",
 ]
 
 [dependency-groups]

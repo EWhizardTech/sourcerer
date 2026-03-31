@@ -25,6 +25,10 @@ class Settings(BaseSettings):
     # Tracking DB configuration
     db_path: str = "data/sourcerer.db"
 
+    # Groq configuration for tagging
+    groq_api_key: str
+    groq_model: str = "llama-3.1-8b-instant"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

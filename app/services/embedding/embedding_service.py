@@ -19,7 +19,7 @@ class EmbeddingService:
     def __init__(self):
         """Initialize the Gemini client for Vertex AI."""
         self.client = genai.Client(
-            api_key= settings.gemini_api_key
+            api_key=settings.GEMINI_API_KEY
         )
         self.model_name = "gemini-embedding-2-preview"
 
@@ -64,10 +64,10 @@ class EmbeddingService:
                     img_b64 = img_ref["image_bytes"]
                     img_data = base64.b64decode(img_b64)
 
-                    if len(img_data) > settings.max_image_embedding_size:
+                    if len(img_data) > settings.MAX_IMAGE_EMBEDDING_SIZE:
                         logger.warning(
                             f"Image chunk {chunk['chunk_id']} exceeds max size "
-                            f"({len(img_data)} > {settings.max_image_embedding_size}). Skipping."
+                            f"({len(img_data)} > {settings.MAX_IMAGE_EMBEDDING_SIZE}). Skipping."
                         )
                         continue
                     
@@ -86,7 +86,8 @@ class EmbeddingService:
                 # to get one embedding for the combination.
                 response = self.client.models.embed_content(
                     model=self.model_name,
-                    contents=content_parts
+                    contents=content_parts,
+                    config=types.EmbedContentConfig(output_dimensionality=settings.QDRANT_VECTOR_SIZE)
                 )
                 
                 if response.embeddings:

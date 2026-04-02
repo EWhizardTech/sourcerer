@@ -1,5 +1,6 @@
 # app/services/chunking/base.py
 
+import uuid
 import logging
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
@@ -36,8 +37,9 @@ class BaseChunker(ABC):
         self, file_id: str, idx: int, text: str, metadata: Dict[str, Any]
     ) -> Dict:
         """Text chunk — content_type always 'text'."""
+        original_id = f"{file_id}_text_{idx}"
         return {
-            "chunk_id": f"{file_id}_text_{idx}",
+            "chunk_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, original_id)),
             "text": text,
             "metadata": {
                 **metadata,
@@ -66,8 +68,9 @@ class BaseChunker(ABC):
         if page_number is not None:
             chunk_meta["page_number"] = page_number
 
+        original_id = f"{file_id}_{content_type}_{idx}"
         return {
-            "chunk_id": f"{file_id}_{content_type}_{idx}",
+            "chunk_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, original_id)),
             "text": text,
             "metadata": chunk_meta,
         }
@@ -84,7 +87,7 @@ class BaseChunker(ABC):
 
         Shape:
         {
-            "chunk_id": "<file_id>_image_<idx>",
+            "chunk_id": <uuid>,
             "image": { "image_id": "...", "image_bytes": "..." },
             "metadata": {
                 "file_id": "...",
@@ -97,8 +100,9 @@ class BaseChunker(ABC):
             }
         }
         """
+        original_id = f"{file_id}_image_{idx}"
         return {
-            "chunk_id": f"{file_id}_image_{idx}",
+            "chunk_id": str(uuid.uuid5(uuid.NAMESPACE_DNS, original_id)),
             "image": {
                 "image_id": image.get("image_id"),
                 "image_bytes": image.get("image_bytes"),

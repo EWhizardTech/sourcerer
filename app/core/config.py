@@ -3,6 +3,7 @@
 Reads typed settings from environment variables / .env file.
 """
 
+from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,28 +11,28 @@ class Settings(BaseSettings):
     """Application settings loaded from environment."""
 
     # Path to the Google service account JSON key file.
-    gdrive_service_account_path: str
+    GDRIVE_SERVICE_ACCOUNT_PATH: str
 
     # Qdrant configuration
-    qdrant_api_key: str
-    qdrant_cluster_endpoint: str
-    qdrant_collection_name: str = "sourcerer_collection"
-    qdrant_vector_size: int = 3072  # Gemini Embeddings 2 default
-    qdrant_distance: str = "Cosine"
+    QDRANT_API_KEY: Optional[str] = None
+    QDRANT_URL: str
+    QDRANT_COLLECTION_NAME: str = "sourcerer_collection"
+    QDRANT_VECTOR_SIZE: int = 2048  # Gemini Embeddings 2 truncated
+    QDRANT_DISTANCE: str = "Cosine"
 
-    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
-    CELERY_BACKEND_URL: str = "redis://localhost:6379/1"
+    CELERY_BROKER_URL: str = "redis://localhost:6380/0"
+    CELERY_BACKEND_URL: str = "redis://localhost:6380/1"
 
     # Tracking DB configuration
-    db_path: str = "data/sourcerer.db"
+    DB_PATH: str = "data/sourcerer.db"
 
     # Groq configuration for tagging
-    groq_api_key: str
-    groq_model: str = "llama-3.1-8b-instant"
+    GROQ_API_KEY: str
+    GROQ_MODEL: str = "llama-3.1-8b-instant"
 
     # Gemini configuration for embedding
-    gemini_api_key: str = None
-    max_image_embedding_size: int = 10 * 1024 * 1024  # 10MB default
+    GEMINI_API_KEY: Optional[str] = None
+    MAX_IMAGE_EMBEDDING_SIZE: int = 10 * 1024 * 1024  # 10MB default
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -76,7 +76,7 @@ def build_drive_client():
     Uses a service account JSON key at the path configured in settings.
     """
     credentials = service_account.Credentials.from_service_account_file(
-        settings.gdrive_service_account_path,
+        settings.GDRIVE_SERVICE_ACCOUNT_PATH,
         scopes=_SCOPES,
     )
     # cache_discovery=False avoids stale discovery doc issues in prod.

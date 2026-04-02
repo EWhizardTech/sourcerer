@@ -21,59 +21,59 @@ class IncrementalService:
     """Service to handle incremental file processing logic."""
 
     def __init__(self):
-        self.db_path = Path(settings.db_path)
-        self._init_db()
+        self.db_path = Path(settings.DB_PATH)
         self.qdrant_client = QdrantClient(
-            url=settings.qdrant_cluster_endpoint,
-            api_key=settings.qdrant_api_key,
+            url=settings.QDRANT_URL,
+            api_key=settings.QDRANT_API_KEY,
         )
-        self.collection_name = settings.qdrant_collection_name
-        self._ensure_collection_exists()
+        self.collection_name = settings.QDRANT_COLLECTION_NAME
+        self.initialized = False
+        self._ensure_storage()
 
-    def _init_db(self):
-        """Initialize SQLite database and tracking table."""
+    def _ensure_storage(self):
+        """Ensures that the tracking database and vector collection exist."""
+        # 1. Tracking Database (SQLite)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS file_tracking (
                     file_id TEXT PRIMARY KEY,
                     file_hash TEXT NOT NULL,
-                    last_processed_at TEXT NOT NULL
+                    last_processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-                """)
-            conn.commit()
-        logger.info("Initialized tracking database at %s", self.db_path)
-
-    def _ensure_collection_exists(self):
-        """Ensure Qdrant collection exists before operations."""
+            """)
+        
+        # 2. Vector Collection (Qdrant)
         try:
-            collections = self.qdrant_client.get_collections().collections
-            exists = any(c.name == self.collection_name for c in collections)
-            if not exists:
-                logger.info("Creating Qdrant collection: %s", self.collection_name)
-                # Default vector size and distance from config
+            if not self.qdrant_client.collection_exists(self.collection_name):
+                # Map human-readable distance to Qdrant models
                 distance_map = {
                     "Cosine": models.Distance.COSINE,
-                    "Euclid": models.Distance.EUCLID,
-                    "Dot": models.Distance.DOT,
+                    "Euclidean": models.Distance.EUCLID,
+                    "Dot": models.Distance.DOT
                 }
                 distance = distance_map.get(
-                    settings.qdrant_distance, models.Distance.COSINE
+                    settings.QDRANT_DISTANCE, models.Distance.COSINE
                 )
-
+                
                 self.qdrant_client.create_collection(
                     collection_name=self.collection_name,
-                    vectors_config=models.VectorParams(
-                        size=settings.qdrant_vector_size,
-                        distance=distance,
-                    ),
+                    vectors_config={
+                        "dense": models.VectorParams(
+                            size=settings.QDRANT_VECTOR_SIZE,
+                            distance=distance
+                        )
+                    },
+                    sparse_vectors_config={
+                        "sparse": models.SparseVectorParams(
+                            modifier=models.Modifier.IDF
+                        )
+                    },
                 )
             else:
                 logger.info("Qdrant collection %s already exists", self.collection_name)
         except Exception as exc:
             logger.error("Failed to check/create Qdrant collection: %s", exc)
-            # We don't raise here to allow the service to be initialized even if Qdrant is down,
-            # though downstream operations will fail.
 
     def compute_hash(self, content: bytes) -> str:
         """Compute MD5 hash of raw file content."""

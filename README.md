@@ -107,7 +107,11 @@ uv sync
 ### 🔹 Step 3: Run the Backend Server
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+or 
+
+uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 ---
@@ -165,3 +169,5 @@ pytest tests/test_parser_chunker.py::test_docx_parser_and_chunker -v
 * Keep your base image updated for optimal build performance.
 
 ---
+
+

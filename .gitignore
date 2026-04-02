@@ -210,3 +210,4 @@ secrets/
 .qdrant-sample.py
 
 tests/results/
+uv.lock

@@ -142,7 +142,9 @@ def get_distractors(word: str, n: int = 3) -> list[str]:
     return results
 
 
-def build_mcqs(chunks: list[dict[str, Any]], num_questions: int = 5) -> list[dict[str, Any]]:
+def build_mcqs(
+    chunks: list[dict[str, Any]], num_questions: int = 5
+) -> list[dict[str, Any]]:
     """Build MCQs from retrieved chunks and existing keyword tags."""
     if num_questions <= 0:
         return []
@@ -155,7 +157,9 @@ def build_mcqs(chunks: list[dict[str, Any]], num_questions: int = 5) -> list[dic
     for chunk in chunks:
         all_keywords.extend(get_keywords(chunk))
 
-    deduped_keywords = list(OrderedDict((kw.lower(), kw) for kw in all_keywords).values())
+    deduped_keywords = list(
+        OrderedDict((kw.lower(), kw) for kw in all_keywords).values()
+    )
     selected_keywords = deduped_keywords[:num_questions]
 
     mcqs: list[dict[str, Any]] = []
@@ -170,7 +174,9 @@ def build_mcqs(chunks: list[dict[str, Any]], num_questions: int = 5) -> list[dic
         source_chunk_ids: list[str] = []
         for chunk in chunks:
             chunk_tags = chunk.get("tags", {})
-            chunk_keywords = chunk_tags.get("keywords", []) if isinstance(chunk_tags, dict) else []
+            chunk_keywords = (
+                chunk_tags.get("keywords", []) if isinstance(chunk_tags, dict) else []
+            )
             normalized_chunk_keywords = {str(item).lower() for item in chunk_keywords}
 
             if keyword.lower() in normalized_chunk_keywords:

@@ -37,9 +37,7 @@ if submitted:
         st.error("Search query is required.")
     else:
         with st.spinner("Retrieving chunks..."):
-            parsed_tags = [
-                item.strip() for item in tags_csv.split(",") if item.strip()
-            ]
+            parsed_tags = [item.strip() for item in tags_csv.split(",") if item.strip()]
             results = retrieve_chunks(
                 query=query.strip(),
                 course_code=course_code.strip() or None,

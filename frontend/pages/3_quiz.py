@@ -38,9 +38,7 @@ if submitted:
         st.error("Query is required.")
     else:
         with st.spinner("Generating quiz..."):
-            parsed_tags = [
-                item.strip() for item in tags_csv.split(",") if item.strip()
-            ]
+            parsed_tags = [item.strip() for item in tags_csv.split(",") if item.strip()]
             result = generate_quiz(
                 query=query.strip(),
                 course_code=course_code.strip() or None,

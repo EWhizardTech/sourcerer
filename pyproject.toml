@@ -23,10 +23,14 @@ dependencies = [
     "google-genai>=1.69.0",
     "streamlit>=1.42.0",
     "requests>=2.32.3",
+    "transformers>=5.5.0",
+    "sentencepiece>=0.2.1",
+    "nltk>=3.9.4",
 ]
 
 [dependency-groups]
 dev = [
+    "huggingface-hub>=1.8.0",
     "pytest>=9.0.2",
 ]
  

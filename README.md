@@ -179,3 +179,6 @@ pytest tests/test_parser_chunker.py::test_docx_parser_and_chunker -v
 * Keep your base image updated for optimal build performance.
 
 ---
+
+
+uv run python -c "from huggingface_hub import snapshot_download; snapshot_download('ramsrigouthamg/t5_squad_v1')"

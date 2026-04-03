@@ -38,3 +38,59 @@ def ingest_gdrive(
     except requests.exceptions.RequestException as e:
         st.error(f"Error calling backend: {e}")
         return None
+
+
+def generate_quiz(
+    query: str,
+    course_code: str | None = None,
+    year: str | None = None,
+    tags: list[str] | None = None,
+    num_questions: int = 5,
+):
+    """Call quiz generation endpoint."""
+    url = f"{BACKEND_URL}/quiz/generate"
+    payload = {
+        "query": query,
+        "filters": {
+            "course_code": course_code,
+            "year": year,
+            "tags": tags,
+        },
+        "num_questions": num_questions,
+    }
+
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error calling backend: {e}")
+        return None
+
+
+def retrieve_chunks(
+    query: str,
+    course_code: str | None = None,
+    year: str | None = None,
+    tags: list[str] | None = None,
+    top_k: int = 5,
+):
+    """Call retrieval endpoint."""
+    url = f"{BACKEND_URL}/retrieve"
+    payload = {
+        "query": query,
+        "filters": {
+            "course_code": course_code,
+            "year": year,
+            "tags": tags,
+        },
+        "top_k": top_k,
+    }
+
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error calling backend: {e}")
+        return None

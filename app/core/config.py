@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # Qdrant configuration
     QDRANT_API_KEY: Optional[str] = None
     QDRANT_URL: str
-    QDRANT_COLLECTION_NAME: str = "sourcerer_collection"
+    QDRANT_COLLECTION_NAME: str
     QDRANT_VECTOR_SIZE: int = 2048  # Gemini Embeddings 2 truncated
     QDRANT_DISTANCE: str = "Cosine"
 

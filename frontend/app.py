@@ -44,6 +44,7 @@ def main():
     
     * **📥 Ingestion:** Ingest documents from Google Drive by providing a Folder ID.
     * **🔍 Retrieval:** (Coming Soon) Search and retrieve context from the ingested documents.
+    * **🧠 Quiz Generation:** Build MCQs from retrieved educational chunks.
     """)
 
 

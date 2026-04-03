@@ -211,3 +211,4 @@ secrets/
 
 tests/results/
 uv.lock
+data/sourcerer.db

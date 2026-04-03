@@ -2,21 +2,25 @@
 
 import base64
 from unittest.mock import MagicMock, patch
+
 import pytest
 from google.genai import types
+
 from app.services.embedding.embedding_service import EmbeddingService
+
 
 @pytest.fixture
 def mock_genai_client():
     with patch("google.genai.Client") as mock_client:
         yield mock_client
 
+
 def test_embed_text_chunks_combined(mock_genai_client):
     # Setup
     service = EmbeddingService()
     mock_response = MagicMock()
     # Mocking single embedding response for each call
-    mock_response.embeddings = [MagicMock(values=[0.1]*3072)]
+    mock_response.embeddings = [MagicMock(values=[0.1] * 3072)]
     service.client.models.embed_content.return_value = mock_response
 
     chunks = [
@@ -25,7 +29,7 @@ def test_embed_text_chunks_combined(mock_genai_client):
             "text": "Hello world",
             "image": None,
             "metadata": {},
-            "tags": {"subject": "Math", "topic": "Algebra"}
+            "tags": {"subject": "Math", "topic": "Algebra"},
         }
     ]
 
@@ -41,11 +45,12 @@ def test_embed_text_chunks_combined(mock_genai_client):
     assert "Subject: Math | Topic: Algebra" in content_parts[0]
     assert "Hello world" in content_parts[0]
 
+
 def test_embed_image_chunks_combined(mock_genai_client):
     # Setup
     service = EmbeddingService()
     mock_response = MagicMock()
-    mock_response.embeddings = [MagicMock(values=[0.9]*3072)]
+    mock_response.embeddings = [MagicMock(values=[0.9] * 3072)]
     service.client.models.embed_content.return_value = mock_response
 
     # Base64 encoded dummy image
@@ -54,11 +59,9 @@ def test_embed_image_chunks_combined(mock_genai_client):
         {
             "chunk_id": "img1",
             "text": "",
-            "image": {
-                "image_bytes": img_bytes
-            },
+            "image": {"image_bytes": img_bytes},
             "metadata": {},
-            "tags": {"subject": "Physics", "keywords": ["Newton"]}
+            "tags": {"subject": "Physics", "keywords": ["Newton"]},
         }
     ]
 
@@ -76,10 +79,9 @@ def test_embed_image_chunks_combined(mock_genai_client):
     # Part 1 should be the image part
     assert any(isinstance(p, types.Part) for p in content_parts)
 
+
 def test_embed_no_content_skips(mock_genai_client):
     service = EmbeddingService()
-    chunks = [
-        {"chunk_id": "empty", "text": "", "image": None, "tags": {}}
-    ]
+    chunks = [{"chunk_id": "empty", "text": "", "image": None, "tags": {}}]
     results = service.embed_chunks(chunks)
     assert len(results) == 0

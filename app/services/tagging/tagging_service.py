@@ -5,9 +5,10 @@ import logging
 from typing import List, Optional
 
 from groq import Groq
+
 from app.core.config import settings
-from app.services.chunking.types import Chunk, TextChunk, ImageChunk
-from app.services.tagging.tagging_types import TagSchema, TaggedChunk
+from app.services.chunking.types import Chunk, ImageChunk, TextChunk
+from app.services.tagging.tagging_types import TaggedChunk, TagSchema
 
 logger = logging.getLogger(__name__)
 
@@ -32,26 +33,23 @@ RULES:
 - Keep output concise and strictly follow the JSON structure.
 """
 
+
 def create_empty_tags() -> TagSchema:
     """Return an empty tag schema."""
-    return {
-        "subject": "",
-        "topic": "",
-        "keywords": [],
-        "difficulty": ""
-    }
+    return {"subject": "", "topic": "", "keywords": [], "difficulty": ""}
+
 
 def tag_chunk(chunk: Chunk) -> TaggedChunk:
     """Tags an individual chunk using Groq LLM.
-    
+
     Args:
         chunk: A TextChunk or ImageChunk.
-        
+
     Returns:
         A TaggedChunk with tags and standardized structure.
     """
     chunk_id = chunk.get("chunk_id", "unknown")
-    
+
     # 1. Image detection
     if "image" in chunk:
         return {
@@ -59,24 +57,24 @@ def tag_chunk(chunk: Chunk) -> TaggedChunk:
             "text": "",
             "image": chunk.get("image"),
             "metadata": chunk.get("metadata", {}),
-            "tags": create_empty_tags()
+            "tags": create_empty_tags(),
         }
 
     # 2. Text/Transcript extraction
     text = chunk.get("text", "")
     metadata = chunk.get("metadata", {})
-    
+
     # 3. Call Groq with exponential backoff
     max_retries = 5
     initial_delay = 1
-    
+
     for i in range(max_retries):
         try:
             response = client.chat.completions.create(
                 model=settings.GROQ_MODEL,
                 messages=[
                     {"role": "system", "content": TAGGING_SYSTEM_PROMPT},
-                    {"role": "user", "content": f"Content to tag:\n\n{text}"}
+                    {"role": "user", "content": f"Content to tag:\n\n{text}"},
                 ],
                 response_format={
                     "type": "json_schema",
@@ -90,49 +88,52 @@ def tag_chunk(chunk: Chunk) -> TaggedChunk:
                                 "topic": {"type": "string"},
                                 "keywords": {
                                     "type": "array",
-                                    "items": {"type": "string"}
+                                    "items": {"type": "string"},
                                 },
                                 "difficulty": {
                                     "type": "string",
-                                    "enum": ["Easy", "Medium", "Hard"]
-                                }
+                                    "enum": ["Easy", "Medium", "Hard"],
+                                },
                             },
                             "required": ["subject", "topic", "keywords", "difficulty"],
-                            "additionalProperties": False
-                        }
-                    }
+                            "additionalProperties": False,
+                        },
+                    },
                 },
-                temperature=0.1
+                temperature=0.1,
             )
-            
+
             raw_response = response.choices[0].message.content
             tags: TagSchema = json.loads(raw_response)
-                    
+
             return {
                 "chunk_id": chunk_id,
                 "text": text,
                 "image": None,
                 "metadata": metadata,
-                "tags": tags
+                "tags": tags,
             }
-            
+
         except Exception as e:
-            # Handle rate limiting (429) specifically if possible, 
+            # Handle rate limiting (429) specifically if possible,
             # otherwise check if it's in the error message
             if "rate_limit_exceeded" in str(e).lower() or "429" in str(e):
-                delay = initial_delay * (2 ** i)
-                logger.warning(f"Groq Rate Limit (429) hit for chunk {chunk_id}. Retrying in {delay}s... (Attempt {i+1}/{max_retries})")
+                delay = initial_delay * (2**i)
+                logger.warning(
+                    f"Groq Rate Limit (429) hit for chunk {chunk_id}. Retrying in {delay}s... (Attempt {i+1}/{max_retries})"
+                )
                 import time
+
                 time.sleep(delay)
                 continue
-            
+
             logger.error(f"Failed to tag chunk {chunk_id}: {str(e)}")
             return {
                 "chunk_id": chunk_id,
                 "text": text,
                 "image": None,
                 "metadata": metadata,
-                "tags": create_empty_tags()
+                "tags": create_empty_tags(),
             }
 
     # Final fallback if all retries fail
@@ -142,8 +143,9 @@ def tag_chunk(chunk: Chunk) -> TaggedChunk:
         "text": text,
         "image": None,
         "metadata": metadata,
-        "tags": create_empty_tags()
+        "tags": create_empty_tags(),
     }
+
 
 def tag_chunks(chunks: List[Chunk]) -> List[TaggedChunk]:
     """Process multiple chunks."""

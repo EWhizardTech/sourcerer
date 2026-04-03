@@ -169,5 +169,3 @@ pytest tests/test_parser_chunker.py::test_docx_parser_and_chunker -v
 * Keep your base image updated for optimal build performance.
 
 ---
-
-

@@ -18,9 +18,7 @@ class EmbeddingService:
 
     def __init__(self):
         """Initialize the Gemini client for Vertex AI."""
-        self.client = genai.Client(
-            api_key=settings.GEMINI_API_KEY
-        )
+        self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
         self.model_name = "gemini-embedding-2-preview"
 
     def _get_description_from_tags(self, tags: dict) -> str:
@@ -36,10 +34,10 @@ class EmbeddingService:
 
     def embed_chunks(self, chunks: List[TaggedChunk]) -> List[EmbeddedChunk]:
         """Generate dense vectors for a list of tagged chunks using combined multimodal embeddings.
-        
+
         Args:
             chunks: List of TaggedChunk objects.
-            
+
         Returns:
             List of EmbeddedChunk objects with 3072-dim vectors.
         """
@@ -50,14 +48,14 @@ class EmbeddingService:
                 # 1. Prepare contents for this chunk
                 # native multimodal allows mixing types in counts
                 content_parts = []
-                
+
                 description = self._get_description_from_tags(chunk.get("tags", {}))
-                
+
                 if chunk.get("text"):
                     # Combine original text with tags for better semantic alignment
                     full_text = f"{description}\n\n{chunk['text']}"
                     content_parts.append(full_text)
-                
+
                 if chunk.get("image") is not None:
                     # Multimodal combined embedding
                     img_ref = chunk["image"]
@@ -70,34 +68,45 @@ class EmbeddingService:
                             f"({len(img_data)} > {settings.MAX_IMAGE_EMBEDDING_SIZE}). Skipping."
                         )
                         continue
-                    
+
                     # If this is an image-only chunk (no text), ensure we have a prompt/tags
                     if not content_parts:
-                        content_parts.append(description if description else "What is shown in this image?")
-                        
-                    content_parts.append(types.Part.from_bytes(data=img_data, mime_type="image/jpeg"))
+                        content_parts.append(
+                            description
+                            if description
+                            else "What is shown in this image?"
+                        )
+
+                    content_parts.append(
+                        types.Part.from_bytes(data=img_data, mime_type="image/jpeg")
+                    )
 
                 if not content_parts:
-                    logger.warning(f"Chunk {chunk['chunk_id']} has no text or image content. Skipping.")
+                    logger.warning(
+                        f"Chunk {chunk['chunk_id']} has no text or image content. Skipping."
+                    )
                     continue
 
                 # 2. Call Vertex AI
-                # Note: gemini-embedding-2-preview uses content_parts as a single entry in contents list 
+                # Note: gemini-embedding-2-preview uses content_parts as a single entry in contents list
                 # to get one embedding for the combination.
                 response = self.client.models.embed_content(
                     model=self.model_name,
                     contents=content_parts,
-                    config=types.EmbedContentConfig(output_dimensionality=settings.QDRANT_VECTOR_SIZE)
+                    config=types.EmbedContentConfig(
+                        output_dimensionality=settings.QDRANT_VECTOR_SIZE
+                    ),
                 )
-                
+
                 if response.embeddings:
-                    embedded_chunks.append({
-                        **chunk,
-                        "dense_vector": response.embeddings[0].values
-                    })
+                    embedded_chunks.append(
+                        {**chunk, "dense_vector": response.embeddings[0].values}
+                    )
                 else:
-                    logger.warning(f"No embeddings returned for chunk {chunk['chunk_id']}")
-                    
+                    logger.warning(
+                        f"No embeddings returned for chunk {chunk['chunk_id']}"
+                    )
+
             except Exception as e:
                 logger.error(f"Failed to embed chunk {chunk.get('chunk_id')}: {str(e)}")
 

@@ -42,7 +42,7 @@ class IncrementalService:
                     last_processed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-        
+
         # 2. Vector Collection (Qdrant)
         try:
             if not self.qdrant_client.collection_exists(self.collection_name):
@@ -50,18 +50,17 @@ class IncrementalService:
                 distance_map = {
                     "Cosine": models.Distance.COSINE,
                     "Euclidean": models.Distance.EUCLID,
-                    "Dot": models.Distance.DOT
+                    "Dot": models.Distance.DOT,
                 }
                 distance = distance_map.get(
                     settings.QDRANT_DISTANCE, models.Distance.COSINE
                 )
-                
+
                 self.qdrant_client.create_collection(
                     collection_name=self.collection_name,
                     vectors_config={
                         "dense": models.VectorParams(
-                            size=settings.QDRANT_VECTOR_SIZE,
-                            distance=distance
+                            size=settings.QDRANT_VECTOR_SIZE, distance=distance
                         )
                     },
                     sparse_vectors_config={

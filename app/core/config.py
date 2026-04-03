@@ -4,6 +4,7 @@ Reads typed settings from environment variables / .env file.
 """
 
 from typing import Optional
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

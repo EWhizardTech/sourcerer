@@ -1,8 +1,10 @@
 import streamlit as st
 
+
 def apply_custom_styles():
     """Apply global custom CSS for the Streamlit app to look sleek."""
-    st.markdown("""
+    st.markdown(
+        """
         <style>
         .stButton > button {
             width: 100%;
@@ -41,7 +43,10 @@ def apply_custom_styles():
             color: #991b1b;
         }
         </style>
-    """, unsafe_allow_html=True)
+    """,
+        unsafe_allow_html=True,
+    )
+
 
 def render_page_header(title: str, subtitle: str = ""):
     """Render a consistent header for pages."""

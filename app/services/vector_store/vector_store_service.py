@@ -15,8 +15,7 @@ class VectorStoreService:
     def __init__(self):
         """Initialize the Qdrant client."""
         self.client = QdrantClient(
-            url=settings.QDRANT_URL,
-            api_key=settings.QDRANT_API_KEY
+            url=settings.QDRANT_URL, api_key=settings.QDRANT_API_KEY
         )
         self.collection_name = settings.QDRANT_COLLECTION_NAME
 
@@ -24,11 +23,15 @@ class VectorStoreService:
         """Idempotently create the Qdrant collection with named dense and sparse vectors."""
         try:
             if self.client.collection_exists(self.collection_name):
-                logger.info(f"Collection '{self.collection_name}' already exists. Skipping creation.")
+                logger.info(
+                    f"Collection '{self.collection_name}' already exists. Skipping creation."
+                )
                 return
 
-            logger.info(f"Creating collection '{self.collection_name}' with hybrid search config...")
-            
+            logger.info(
+                f"Creating collection '{self.collection_name}' with hybrid search config..."
+            )
+
             self.client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config={
@@ -38,19 +41,19 @@ class VectorStoreService:
                     )
                 },
                 sparse_vectors_config={
-                    "sparse": models.SparseVectorParams(
-                        modifier=models.Modifier.IDF
-                    )
+                    "sparse": models.SparseVectorParams(modifier=models.Modifier.IDF)
                 },
             )
             logger.info(f"Successfully created collection '{self.collection_name}'.")
         except Exception as e:
-            logger.error(f"Failed to create collection '{self.collection_name}': {str(e)}")
+            logger.error(
+                f"Failed to create collection '{self.collection_name}': {str(e)}"
+            )
             raise
 
     def upsert_chunks(self, chunks: List[EmbeddedChunk]) -> None:
         """Batch upsert multiple chunks into Qdrant.
-        
+
         Handles dense vectors for all chunks and adds sparse BM25 vectors for text content.
         """
         if not chunks:
@@ -61,15 +64,14 @@ class VectorStoreService:
         for chunk in chunks:
             try:
                 # 1. Prepare vectors (Hybrid: Dense + Sparse)
-                vectors = {
-                    "dense": chunk["dense_vector"]
-                }
-                
+                vectors = {"dense": chunk["dense_vector"]}
+
                 # Only add sparse vector if it's not an image chunk
-                if chunk["metadata"].get("content_type") != "image" and chunk.get("text"):
+                if chunk["metadata"].get("content_type") != "image" and chunk.get(
+                    "text"
+                ):
                     vectors["sparse"] = models.Document(
-                        text=chunk["text"],
-                        model="Qdrant/bm25"
+                        text=chunk["text"], model="Qdrant/bm25"
                     )
 
                 # 2. Prepare payload
@@ -87,7 +89,7 @@ class VectorStoreService:
                     "keywords": chunk["tags"].get("keywords", []),
                     "difficulty": chunk["tags"].get("difficulty", ""),
                 }
-                
+
                 # Optional fields
                 if "exam_type" in chunk["metadata"]:
                     payload["exam_type"] = chunk["metadata"]["exam_type"]
@@ -98,13 +100,13 @@ class VectorStoreService:
 
                 points.append(
                     models.PointStruct(
-                        id=chunk["chunk_id"],
-                        vector=vectors,
-                        payload=payload
+                        id=chunk["chunk_id"], vector=vectors, payload=payload
                     )
                 )
             except KeyError as e:
-                logger.error(f"Missing required field in chunk {chunk.get('chunk_id')}: {str(e)}")
+                logger.error(
+                    f"Missing required field in chunk {chunk.get('chunk_id')}: {str(e)}"
+                )
                 continue
 
         if not points:
@@ -113,11 +115,11 @@ class VectorStoreService:
 
         try:
             self.client.upsert(
-                collection_name=self.collection_name,
-                points=points,
-                wait=True
+                collection_name=self.collection_name, points=points, wait=True
             )
-            logger.info(f"Successfully upserted {len(points)} chunks to '{self.collection_name}'.")
+            logger.info(
+                f"Successfully upserted {len(points)} chunks to '{self.collection_name}'."
+            )
         except Exception as e:
             logger.error(f"Failed to upsert chunks to Qdrant: {str(e)}")
             raise

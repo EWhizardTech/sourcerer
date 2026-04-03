@@ -2,8 +2,10 @@
 
 import json
 from unittest.mock import MagicMock
+
+from app.services.chunking.types import ImageChunk, TextChunk
 from app.services.tagging.tagging_service import tag_chunk
-from app.services.chunking.types import TextChunk, ImageChunk
+
 
 def run_demo():
     # 1. Document Chunk
@@ -15,8 +17,8 @@ def run_demo():
             "content_type": "text",
             "source": "document",
             "course_code": "CS101",
-            "year": "2024"
-        }
+            "year": "2024",
+        },
     }
 
     # 2. Transcript Chunk
@@ -28,25 +30,22 @@ def run_demo():
             "content_type": "text",
             "source": "transcript",
             "course_code": "BIO202",
-            "year": "2023"
-        }
+            "year": "2023",
+        },
     }
 
     # 3. Image Chunk
     image_chunk: ImageChunk = {
         "chunk_id": "file_123_image_2",
-        "image": {
-            "image_id": "img_456",
-            "image_bytes": "base64_data_here"
-        },
+        "image": {"image_id": "img_456", "image_bytes": "base64_data_here"},
         "metadata": {
             "file_id": "file_123",
             "content_type": "image",
             "source": "document",
             "page_number": 3,
             "course_code": "CS101",
-            "year": "2024"
-        }
+            "year": "2024",
+        },
     }
 
     print("--- DOCUMENT CHUNK TAGGING ---")
@@ -61,27 +60,35 @@ def run_demo():
     tagged_image = tag_chunk(image_chunk)
     print(json.dumps(tagged_image, indent=2))
 
+
 if __name__ == "__main__":
     # Mocking the client inside tagging_service for demo purposes if no API key
-    import app.services.tagging.tagging_service as ts
     from unittest.mock import patch
 
-    mock_resp = MagicMock()
-    mock_resp.choices[0].message.content = json.dumps({
-        "subject": "Computer Science",
-        "topic": "Sorting Algorithms",
-        "keywords": ["Quick Sort", "Divide and Conquer", "Algorithms"],
-        "difficulty": "Medium"
-    })
-    
-    mock_resp_bio = MagicMock()
-    mock_resp_bio.choices[0].message.content = json.dumps({
-        "subject": "Biology",
-        "topic": "Photosynthesis",
-        "keywords": ["Chlorophyll", "Light Reactions", "Energy"],
-        "difficulty": "Medium"
-    })
+    import app.services.tagging.tagging_service as ts
 
-    with patch("app.services.tagging.tagging_service.client.chat.completions.create") as mocked_create:
+    mock_resp = MagicMock()
+    mock_resp.choices[0].message.content = json.dumps(
+        {
+            "subject": "Computer Science",
+            "topic": "Sorting Algorithms",
+            "keywords": ["Quick Sort", "Divide and Conquer", "Algorithms"],
+            "difficulty": "Medium",
+        }
+    )
+
+    mock_resp_bio = MagicMock()
+    mock_resp_bio.choices[0].message.content = json.dumps(
+        {
+            "subject": "Biology",
+            "topic": "Photosynthesis",
+            "keywords": ["Chlorophyll", "Light Reactions", "Energy"],
+            "difficulty": "Medium",
+        }
+    )
+
+    with patch(
+        "app.services.tagging.tagging_service.client.chat.completions.create"
+    ) as mocked_create:
         mocked_create.side_effect = [mock_resp, mock_resp_bio]
         run_demo()

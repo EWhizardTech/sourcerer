@@ -1,0 +1,165 @@
+{
+  "project": {
+    "name": "Sourcerer Backend",
+    "repo_root": ".",
+    "purpose": "AI-powered RAG backend with Google Drive ingestion, incremental processing, tagging, embedding, and Qdrant storage.",
+    "stack": [
+      "Python",
+      "FastAPI",
+      "Celery",
+      "Redis",
+      "Qdrant",
+      "Streamlit",
+      "Google Drive API",
+      "Groq",
+      "Gemini Embeddings 2"
+    ],
+    "package_manager": "uv",
+    "last_updated": "2026-04-03"
+  },
+  "entrypoints": {
+    "backend": "app/main.py",
+    "frontend": "frontend/app.py",
+    "ingestion_route": "app/routes/ingestion.py",
+    "worker": "app/workers/tasks.py"
+  },
+  "boot_commands": {
+    "local_backend": "uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload",
+    "local_frontend": "uv run streamlit run frontend/app.py",
+    "infra": "docker compose -f docker-compose.infra.yml up",
+    "tests": "pytest -s -v"
+  },
+  "environment": {
+    "required": [
+      "GDRIVE_SERVICE_ACCOUNT_PATH",
+      "QDRANT_URL",
+      "GROQ_API_KEY"
+    ],
+    "optional": [
+      "QDRANT_API_KEY",
+      "GEMINI_API_KEY"
+    ],
+    "defaults": {
+      "QDRANT_COLLECTION_NAME": "sourcerer_collection",
+      "QDRANT_VECTOR_SIZE": 2048,
+      "QDRANT_DISTANCE": "Cosine",
+      "CELERY_BROKER_URL": "redis://localhost:6380/0",
+      "CELERY_BACKEND_URL": "redis://localhost:6380/1",
+      "DB_PATH": "data/sourcerer.db",
+      "GROQ_MODEL": "llama-3.1-8b-instant",
+      "MAX_IMAGE_EMBEDDING_SIZE": 10485760
+    }
+  },
+  "backend_structure": {
+    "app/core": [
+      "config.py",
+      "logging.py"
+    ],
+    "app/models": [
+      "schemas.py"
+    ],
+    "app/routes": [
+      "ingestion.py"
+    ],
+    "app/services": [
+      "gdrive_service.py",
+      "incremental_service.py",
+      "metadata_service.py",
+      "chunking/*",
+      "parsing/*",
+      "tagging/*",
+      "embedding/*",
+      "vector_store/vector_store_service.py"
+    ],
+    "app/workers": [
+      "celery_app.py",
+      "tasks.py"
+    ]
+  },
+  "frontend_structure": {
+    "app": "frontend/app.py",
+    "components": [
+      "frontend/components/api.py",
+      "frontend/components/styling.py"
+    ],
+    "pages": [
+      "frontend/pages/1_ingestion.py",
+      "frontend/pages/2_retrieval.py"
+    ]
+  },
+  "pipeline": {
+    "flow": [
+      "Google Drive folder is recursively scanned and supported files are downloaded in memory.",
+      "Folder metadata is extracted from the breadcrumb path and merged with optional course/year fields.",
+      "The Celery worker computes a file hash and checks SQLite tracking for NEW, SKIP, or UPDATE.",
+      "UPDATE deletes prior Qdrant vectors for the same file_id before continuing.",
+      "The file is parsed through a MIME-based parser factory.",
+      "The parsed document is chunked using an automatic strategy selector.",
+      "Chunks are tagged with Groq and a strict JSON schema.",
+      "Tagged chunks are embedded with Gemini Embeddings 2.",
+      "Embedded chunks are upserted to Qdrant with dense and sparse vectors.",
+      "The tracking store is updated only after the pipeline completes successfully."
+    ],
+    "incremental_states": [
+      "NEW",
+      "SKIP",
+      "UPDATE"
+    ]
+  },
+  "data_contracts": {
+    "gdrive_record": [
+      "file_id",
+      "file_name",
+      "mime_type",
+      "file_path",
+      "modified_time",
+      "content"
+    ],
+    "folder_metadata": [
+      "course_code",
+      "year",
+      "tags"
+    ],
+    "chunk_metadata": [
+      "file_id",
+      "source",
+      "content_type",
+      "page_number",
+      "course_code",
+      "year",
+      "subject",
+      "topic",
+      "keywords",
+      "difficulty"
+    ],
+    "embedded_chunk": [
+      "chunk_id",
+      "text",
+      "image",
+      "metadata",
+      "tags",
+      "dense_vector"
+    ]
+  },
+  "tests": {
+    "current_focus": [
+      "tests/test_metadata_service.py",
+      "tests/test_incremental_service.py",
+      "tests/test_parser_chunker.py",
+      "tests/test_vector_store.py"
+    ],
+    "sample_data": "tests/samples/"
+  },
+  "known_gaps": [
+    "frontend/pages/2_retrieval.py is a placeholder.",
+    "app/models/schemas.py is currently empty.",
+    "The README still describes an older mixed set of pipeline stage numbers.",
+    "The ingestion route returns base64 content and also enqueues background work, so callers should not assume synchronous completion."
+  ],
+  "resume_notes": [
+    "Prefer simple, testable changes over new abstractions.",
+    "Keep tracking updates after successful processing only.",
+    "Use the existing factories for parsing and chunking before adding new branches.",
+    "If adding new document types, update Drive support, parser selection, and tests together."
+  ]
+}

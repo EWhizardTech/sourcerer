@@ -116,12 +116,22 @@ uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 
 ---
 
+### Step 4: Run the Streamlit frontend app
+```bash
+uv run streamlit run frontend/app.py
+```
+
+---
+
+
 ## 📁 Project Structure (Optional Overview)
 
 ```
 .
 ├── app/                # FastAPI application
 ├── tests/              # Test suite
+├── docs/               # Documentation
+├── frontend/           # Streamlit frontend
 ├── docker-compose.yml
 ├── docker-compose.gpu.yml
 ├── docker-compose.infra.yml

@@ -11,7 +11,8 @@ from typing import Any
 from google import genai
 from google.genai import types
 from qdrant_client import QdrantClient, models
-from qdrant_client.http.exceptions import ResponseHandlingException, UnexpectedResponse
+from qdrant_client.http.exceptions import (ResponseHandlingException,
+                                           UnexpectedResponse)
 
 from app.core.config import settings
 

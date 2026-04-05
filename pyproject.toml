@@ -26,6 +26,8 @@ dependencies = [
     "transformers>=5.5.0",
     "sentencepiece>=0.2.1",
     "nltk>=3.9.4",
+    "spacy>=3.8.14",
+    "scikit-learn>=1.8.0",
 ]
 
 [dependency-groups]

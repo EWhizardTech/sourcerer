@@ -124,6 +124,56 @@ class VectorStoreService:
             logger.error(f"Failed to upsert chunks to Qdrant: {str(e)}")
             raise
 
+    def search(
+        self,
+        query_vector: List[float],
+        query_text: str,
+        k: int = 5,
+        subject: Optional[str] = None,
+        topic: Optional[str] = None,
+        keywords: Optional[List[str]] = None,
+        difficulty: Optional[str] = None,
+    ) -> List[dict]:
+        """Perform a hybrid search using dense and sparse vectors, with optional metadata filtering."""
+        
+        must_conditions = []
+        if subject:
+            must_conditions.append(models.FieldCondition(key="subject", match=models.MatchValue(value=subject)))
+        if topic:
+            must_conditions.append(models.FieldCondition(key="topic", match=models.MatchValue(value=topic)))
+        if difficulty:
+            must_conditions.append(models.FieldCondition(key="difficulty", match=models.MatchValue(value=difficulty)))
+        if keywords:
+            must_conditions.append(models.FieldCondition(key="keywords", match=models.MatchAny(any=keywords)))
+            
+        query_filter = models.Filter(must=must_conditions) if must_conditions else None
+
+        try:
+            results = self.client.query_points(
+                collection_name=self.collection_name,
+                prefetch=[
+                    models.Prefetch(
+                        query=query_vector,
+                        using="dense",
+                        limit=k,
+                    ),
+                    models.Prefetch(
+                        query=models.Document(text=query_text, model="Qdrant/bm25"),
+                        using="sparse",
+                        limit=k,
+                    ),
+                ],
+                query=models.FusionQuery(fusion=models.Fusion.RRF),
+                query_filter=query_filter,
+                limit=k,
+            )
+            
+            return [hit.payload for hit in results.points]
+            
+        except Exception as e:
+            logger.error(f"Failed to perform search: {str(e)}")
+            raise
+            
 
 # Singleton instance
 vector_store_service = VectorStoreService()

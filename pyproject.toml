@@ -25,6 +25,7 @@ dependencies = [
     "requests>=2.32.3",
     "langgraph>=1.1.6",
     "langchain-groq>=1.1.2",
+    "tavily-python>=0.7.23",
 ]
 
 [dependency-groups]

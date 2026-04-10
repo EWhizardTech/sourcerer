@@ -35,6 +35,9 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = None
     MAX_IMAGE_EMBEDDING_SIZE: int = 10 * 1024 * 1024  # 10MB default
 
+    # Tavily configuration for search (optional unless web search is used)
+    TAVILY_API_KEY: str = ""
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

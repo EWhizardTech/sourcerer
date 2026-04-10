@@ -1,11 +1,74 @@
 import logging
 from typing import List, Optional
 from langchain_core.tools import tool
+from tavily import TavilyClient
 
+try:
+    from tavily.errors import UsageLimitExceededError
+except Exception:  # pragma: no cover - defensive import fallback
+    UsageLimitExceededError = None
+
+from app.core.config import settings
 from app.services.embedding.embedding_service import embedding_service
 from app.services.vector_store.vector_store_service import vector_store_service
 
 logger = logging.getLogger(__name__)
+
+
+@tool
+def search_web(query: str, max_results: int = 5) -> str:
+    """Search the public web using Tavily for real-time information.
+
+    Use this tool ONLY when the user has explicitly requested a web search
+    in their message - for example, phrases like "refer web", "check online",
+    "search the internet", "look it up online", or "from the web".
+
+    Do NOT call this tool for general knowledge questions. Use search_documents
+    for all knowledge base lookups.
+
+    Args:
+        query: The search query to look up on the web.
+        max_results: Number of web results to retrieve. Default is 5.
+
+    Returns:
+        A formatted string of web search results, or an error message.
+    """
+    logger.info("Tool search_web called with query='%s', max_results=%s", query, max_results)
+    if not settings.TAVILY_API_KEY:
+        return "Web search is not configured. Please set TAVILY_API_KEY in the environment."
+
+    try:
+        client = TavilyClient(api_key=settings.TAVILY_API_KEY)
+        response = client.search(
+            query=query,
+            search_depth="basic",
+            max_results=max_results,
+        )
+
+        results = response.get("results", []) if isinstance(response, dict) else []
+        if not results:
+            return "No web results found for the query. Try rephrasing."
+
+        formatted_results = []
+        for i, result in enumerate(results):
+            title = result.get("title", "Untitled")
+            url = result.get("url", "Unknown")
+            content = result.get("content", "")
+            formatted_results.append(
+                f"--- Web Result {i+1} ---\n"
+                f"Title: {title}\n"
+                f"URL: {url}\n"
+                f"Content:\n{content}\n"
+            )
+
+        return "\n".join(formatted_results)
+    except Exception as e:
+        if UsageLimitExceededError and isinstance(e, UsageLimitExceededError):
+            logger.error("Tavily web search failed: %s", e)
+            return "Error: Tavily usage limit exceeded. Please check your plan."
+
+        logger.error("Tavily web search failed: %s", e)
+        return "Error: Web search failed. Please try again later."
 
 @tool
 def search_documents(

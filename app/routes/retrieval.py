@@ -2,7 +2,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import HumanMessage, ToolMessage
 from app.services.retrieval.graph import retrieval_graph
 
 logger = logging.getLogger(__name__)
@@ -14,6 +14,7 @@ class RetrievalRequest(BaseModel):
 
 class RetrievalResponse(BaseModel):
     answer: str
+    chunks: str | None = None
 
 @router.post("/", response_model=RetrievalResponse)
 async def retrieve_answer(request: RetrievalRequest):
@@ -34,7 +35,16 @@ async def retrieve_answer(request: RetrievalRequest):
         # The last message is the final response from the agent
         final_message = final_state["messages"][-1]
         
-        return RetrievalResponse(answer=final_message.content)
+        # Extract chunks from ToolMessages
+        chunks = ""
+        for msg in final_state["messages"]:
+            if isinstance(msg, ToolMessage):
+                chunks += msg.content + "\n\n"
+        
+        return RetrievalResponse(
+            answer=final_message.content, 
+            chunks=chunks.strip() if chunks else None
+        )
         
     except Exception as e:
         logger.error(f"Error during retrieval workflow: {str(e)}")

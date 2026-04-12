@@ -1,86 +1,131 @@
-'''system_prompt = """You are a helpful educational assistant named Sourcerer.
-Your goal is to answer the user's questions based on the documents you can retrieve from the knowledge base.
-
-INSTRUCTIONS:
-1. You have access to the `search_documents` tool. You MUST use it to search for relevant context before answering.
-2. For the `search_documents` tool:
-   - Provide a specific `query` text.
-   - Choose a suitable `k` (e.g., 5-10) based on how broad the question is.
-   - Extract filters directly from the user's question if they mention a subject, topic, difficulty, or keywords (e.g., "in Computer Science", "about Data Structures").
-3. Critically evaluate the retrieved documents:
-   - Do they contain the answer?
-   - If NO: You MUST retry and call `search_documents` again with a better `query` or different filters.
-4. If you have tried to search multiple times and still cannot find the required information to answer the question, you MUST formulate your final response EXACTLY as: "Insufficient info"
-5. Do not use your prior knowledge to answer the question. Your answer MUST be derived entirely from the retrieved documents.
-"""'''
-
-
 import logging
+from typing import Any
 
 from langchain_core.messages import SystemMessage
 from langchain_groq import ChatGroq
-from langgraph.graph import StateGraph, MessagesState, START
+from langgraph.graph import START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
 from app.core.config import settings
-from app.services.retrieval.tools import search_documents
+from app.services.retrieval.tools import search_documents, search_web
 
 logger = logging.getLogger(__name__)
 
-# Initialize the LLM with Groq
+# Initialize the LLM with Groq.
 llm = ChatGroq(
     model="llama-3.1-8b-instant",
     api_key=settings.GROQ_API_KEY,
-    temperature=0
+    temperature=0,
 )
 
-# Bind the tools
-tools = [search_documents]
+# Keep a combined binding for parity and future extensibility.
+tools = [search_documents, search_web]
 llm_with_tools = llm.bind_tools(tools)
 
-# Define System Message
+# Deterministic routing bindings to prevent wrong-tool drift.
+llm_documents_only = llm.bind_tools([search_documents])
+llm_web_only = llm.bind_tools([search_web])
+
 system_prompt = """You are a helpful educational assistant named Sourcerer.
-Your goal is to answer the user's questions based on the documents you can retrieve from the knowledge base.
+Your goal is to answer the user's questions accurately and honestly.
+
+You have two tools available:
+
+1. search_documents - searches the internal knowledge base of course materials.
+   Use this for ALL questions by default.
+
+2. search_web - searches the public internet using Tavily.
+   Use this ONLY when the user explicitly asks for a web search.
+   Explicit web search signals include phrases such as:
+     - "refer web"
+     - "check online"
+     - "search the internet"
+     - "look it up online"
+     - "from the web"
+     - "web search"
+     - "search online"
+   If the user's message does NOT contain an explicit web search signal,
+   do NOT call search_web under any circumstances.
 
 INSTRUCTIONS:
-1. You have access to the `search_documents` tool. You MUST use it to search for relevant context before answering.
-2. For the `search_documents` tool:
-   - Provide a specific `query` text.
-   - Choose a suitable `k` (e.g., 5-10) based on how broad the question is.
-3. Critically evaluate the retrieved documents:
-   - Do they contain the answer?
-   - If NO: You MUST formulate your final response EXACTLY as: "Insufficient info"
-4. Do not use your prior knowledge to answer the question. Your answer MUST be derived entirely from the retrieved documents.
+1. You MUST call at least one tool before answering.
+2. If the user explicitly requests a web search -> call search_web.
+   Otherwise -> call search_documents.
+3. Choose k (5-10) for search_documents based on query breadth.
+4. If retrieved content does not contain the answer ->
+   respond EXACTLY: "Insufficient info"
+5. Answer ONLY from the content returned by the tools.
+   Do NOT use your prior knowledge.
+6. When answering from web results, always cite the source URL.
 """
 
+WEB_SIGNAL_PHRASES = (
+    "refer web",
+    "check online",
+    "search the internet",
+    "look it up online",
+    "from the web",
+    "web search",
+    "search online",
+)
+
+
+def _extract_latest_user_query(messages: list[Any]) -> str:
+    """Extract the latest user query text from message history.
+
+    Args:
+        messages: Full LangGraph message history.
+
+    Returns:
+        Latest user message content if present, otherwise an empty string.
+    """
+    for message in reversed(messages):
+        if getattr(message, "type", "") == "human":
+            content = getattr(message, "content", "")
+            return content if isinstance(content, str) else str(content)
+    return ""
+
+
+def _has_explicit_web_signal(query: str) -> bool:
+    """Check whether the user query explicitly asks for web search.
+
+    Args:
+        query: User query text.
+
+    Returns:
+        True if query contains any explicit web-search trigger phrase.
+    """
+    query_lower = query.lower()
+    return any(phrase in query_lower for phrase in WEB_SIGNAL_PHRASES)
+
+
 def agent_node(state: MessagesState):
-    """The agent node that decides whether to call a tool or respond."""
-    logger.info(f"Agent Node invoked. Current history length: {len(state['messages'])}")
+    """Decide whether to call a tool or respond based on message history."""
+    logger.info("Agent Node invoked. Current history length: %s", len(state["messages"]))
     messages = state["messages"]
-    
-    # Construct the messages payload
+
     payload = [SystemMessage(content=system_prompt)] + messages
-        
-    response = llm_with_tools.invoke(payload)
+
+    user_query = _extract_latest_user_query(messages)
+    if _has_explicit_web_signal(user_query):
+        logger.info("Explicit web signal detected. Restricting tools to search_web.")
+        response = llm_web_only.invoke(payload)
+    else:
+        logger.info("No web signal detected. Restricting tools to search_documents.")
+        response = llm_documents_only.invoke(payload)
+
     return {"messages": [response]}
 
 
-# Build the Graph
+# Build graph topology.
 workflow = StateGraph(MessagesState)
+tool_node = ToolNode([search_documents, search_web])
 
-# Add nodes
 workflow.add_node("agent", agent_node)
-workflow.add_node("tools", ToolNode(tools))
+workflow.add_node("tools", tool_node)
 
-# Add edges
 workflow.add_edge(START, "agent")
-
-# Condition: If the agent returns a tool_call, route to "tools". Otherwise route to END.
-workflow.add_conditional_edges(
-    "agent",
-    tools_condition,
-)
+workflow.add_conditional_edges("agent", tools_condition)
 workflow.add_edge("tools", "agent")
 
-# Compile the graph
 retrieval_graph = workflow.compile()

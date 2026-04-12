@@ -111,3 +111,26 @@ class EmbeddingService:
                 logger.error(f"Failed to embed chunk {chunk.get('chunk_id')}: {str(e)}")
 
         return embedded_chunks
+
+    def embed_query(self, query: str) -> List[float]:
+        """Generate dense vector for a search query string."""
+        try:
+            response = self.client.models.embed_content(
+                model=self.model_name,
+                contents=query,
+                config=types.EmbedContentConfig(
+                    output_dimensionality=settings.QDRANT_VECTOR_SIZE,
+                    task_type="RETRIEVAL_QUERY"
+                ),
+            )
+            if response.embeddings:
+                return response.embeddings[0].values
+            else:
+                logger.error(f"No embeddings returned for query: {query}")
+                return []
+        except Exception as e:
+            logger.error(f"Failed to embed query: {str(e)}")
+            raise
+
+# Singleton instance
+embedding_service = EmbeddingService()

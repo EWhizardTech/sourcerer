@@ -38,3 +38,15 @@ def ingest_gdrive(
     except requests.exceptions.RequestException as e:
         st.error(f"Error calling backend: {e}")
         return None
+
+def retrieve_answer(query: str):
+    """Call the retrieval endpoint."""
+    url = f"{BACKEND_URL}/api/v1/retrieve/"
+    payload = {"query": query}
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error calling backend: {e}")
+        return None

@@ -19,10 +19,13 @@ dependencies = [
     "docling>=2.82.0",
     "pymupdf>=1.26.5",
     "fitz>=0.0.1.dev2",
-    "groq>=1.1.2",
+    "groq>=0.30.0,<1",
     "google-genai>=1.69.0",
     "streamlit>=1.42.0",
     "requests>=2.32.3",
+    "langgraph>=1.1.6",
+    "langchain-groq>=1.1.2",
+    "tavily-python>=0.7.23",
 ]
 
 [dependency-groups]
@@ -30,3 +33,15 @@ dev = [
     "pytest>=9.0.2",
 ]
  
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+torchvision = [
+  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true

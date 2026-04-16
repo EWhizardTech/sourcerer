@@ -1,6 +1,3 @@
-Here’s a polished, detailed **README.md** with clear structure, improved wording, and developer-friendly flow:
-
----
 
 # 🚀 Sourcerer Backend
 

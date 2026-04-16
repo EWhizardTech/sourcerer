@@ -21,7 +21,7 @@ def ingest_gdrive(
     include_root: bool = False,
 ):
     """Call Google Drive ingestion endpoint."""
-    url = f"{BACKEND_URL}/ingest/gdrive"
+    url = f"{BACKEND_URL}/api/v1/ingest/gdrive"
     payload = {
         "folder_id": folder_id,
         "course_code": course_code,

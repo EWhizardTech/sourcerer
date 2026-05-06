@@ -38,6 +38,20 @@ class Settings(BaseSettings):
     # Tavily configuration for search (optional unless web search is used)
     TAVILY_API_KEY: str = ""
 
+    # Optional Hugging Face token for gated/private model downloads.
+    HF_TOKEN: str = ""
+
+    # Local cache directories for quiz NLP/ML assets.
+    ML_CACHE_DIR: str = "data/ml_cache"
+    HF_HOME: str = "data/ml_cache/hf_home"
+    HUGGINGFACE_HUB_CACHE: str = "data/ml_cache/huggingface_hub"
+    TRANSFORMERS_CACHE: str = "data/ml_cache/transformers"
+    TORCH_HOME: str = "data/ml_cache/torch"
+    NLTK_DATA_DIR: str = "data/ml_cache/nltk_data"
+    SPACY_MODEL_DIR: str = "data/ml_cache/spacy_models"
+    SPACY_MODEL_NAME: str = "en_core_web_sm"
+
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

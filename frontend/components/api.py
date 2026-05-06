@@ -2,7 +2,7 @@ import requests
 import streamlit as st
 
 # Default to 8000, assuming backend runs locally on port 8000
-BACKEND_URL = "http://localhost:8000"
+BACKEND_URL = "http://127.0.0.1:8000"
 
 
 def get_health() -> bool:
@@ -47,6 +47,48 @@ def retrieve_answer(query: str):
         response = requests.post(url, json=payload)
         response.raise_for_status()
         return response.json()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error calling backend: {e}")
+        return None
+
+
+def generate_quiz(
+    query: str,
+    course_code: str | None = None,
+    year: str | None = None,
+    tags: list[str] | None = None,
+    num_questions: int = 5,
+    allow_unfiltered_fallback: bool = True,
+):
+    """Call the quiz generation endpoint."""
+    url = f"{BACKEND_URL}/api/v1/quiz/generate"
+    payload = {
+        "query": query,
+        "filters": {
+            "course_code": course_code,
+            "year": year,
+            "tags": tags,
+        },
+        "num_questions": num_questions,
+        "allow_unfiltered_fallback": allow_unfiltered_fallback,
+    }
+
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        detail = None
+        if e.response is not None:
+            try:
+                detail = e.response.json().get("detail")
+            except ValueError:
+                detail = e.response.text
+        if detail:
+            st.error(f"Error calling backend: {detail}")
+        else:
+            st.error(f"Error calling backend: {e}")
+        return None
     except requests.exceptions.RequestException as e:
         st.error(f"Error calling backend: {e}")
         return None

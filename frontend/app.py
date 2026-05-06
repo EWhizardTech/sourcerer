@@ -43,7 +43,8 @@ def main():
     Use the sidebar to navigate to the desired functionality:
     
     * **📥 Ingestion:** Ingest documents from Google Drive by providing a Folder ID.
-    * **🔍 Retrieval:** (Coming Soon) Search and retrieve context from the ingested documents.
+    * **🔍 Retrieval:** Search and retrieve context from the ingested documents.
+    * **📝 Quiz:** Generate multiple-choice questions from retrieved course content.
     """)
 
 

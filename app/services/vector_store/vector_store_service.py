@@ -129,6 +129,8 @@ class VectorStoreService:
         query_vector: List[float],
         query_text: str,
         k: int = 5,
+        course_code: Optional[str] = None,
+        year: Optional[str] = None,
         subject: Optional[str] = None,
         topic: Optional[str] = None,
         keywords: Optional[List[str]] = None,
@@ -137,14 +139,48 @@ class VectorStoreService:
         """Perform a hybrid search using dense and sparse vectors, with optional metadata filtering."""
         
         must_conditions = []
+        if course_code:
+            must_conditions.append(
+                models.FieldCondition(
+                    key="course_code",
+                    match=models.MatchValue(value=course_code),
+                )
+            )
+        if year:
+            must_conditions.append(
+                models.FieldCondition(
+                    key="year",
+                    match=models.MatchValue(value=year),
+                )
+            )
         if subject:
-            must_conditions.append(models.FieldCondition(key="subject", match=models.MatchValue(value=subject)))
+            must_conditions.append(
+                models.FieldCondition(
+                    key="subject",
+                    match=models.MatchValue(value=subject),
+                )
+            )
         if topic:
-            must_conditions.append(models.FieldCondition(key="topic", match=models.MatchValue(value=topic)))
+            must_conditions.append(
+                models.FieldCondition(
+                    key="topic",
+                    match=models.MatchValue(value=topic),
+                )
+            )
         if difficulty:
-            must_conditions.append(models.FieldCondition(key="difficulty", match=models.MatchValue(value=difficulty)))
+            must_conditions.append(
+                models.FieldCondition(
+                    key="difficulty",
+                    match=models.MatchValue(value=difficulty),
+                )
+            )
         if keywords:
-            must_conditions.append(models.FieldCondition(key="keywords", match=models.MatchAny(any=keywords)))
+            must_conditions.append(
+                models.FieldCondition(
+                    key="keywords",
+                    match=models.MatchAny(any=keywords),
+                )
+            )
             
         query_filter = models.Filter(must=must_conditions) if must_conditions else None
 

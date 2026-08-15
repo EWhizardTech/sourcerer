@@ -8,6 +8,7 @@ import logging
 from fastapi import FastAPI
 
 from app.routes.ingestion import router as ingestion_router
+from app.routes.quiz import router as quiz_router
 from app.routes.retrieval import router as retrieval_router
 
 # Configure basic logging for all stages.
@@ -25,6 +26,7 @@ app = FastAPI(
 # Stage 1: Google Drive ingestion.
 app.include_router(ingestion_router, prefix="/api/v1")
 app.include_router(retrieval_router, prefix="/api/v1")
+app.include_router(quiz_router, prefix="/api/v1")
 
 
 @app.get("/health")

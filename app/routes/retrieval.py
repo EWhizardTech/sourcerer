@@ -2,8 +2,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from langchain_core.messages import HumanMessage, ToolMessage
-from app.services.retrieval.graph import retrieval_graph
+from app.services.retrieval_flow_service import run_retrieval_flow
 
 logger = logging.getLogger(__name__)
 
@@ -24,26 +23,10 @@ async def retrieve_answer(request: RetrievalRequest):
     """
     logger.info(f"Received retrieval query: {request.query}")
     try:
-        # Initialize thread state with human message
-        initial_state = {
-            "messages": [HumanMessage(content=request.query)]
-        }
-        
-        # Invoke graph (we may want to limit steps with recursion_limit, e.g. recursion_limit=10)
-        final_state = retrieval_graph.invoke(initial_state, {"recursion_limit": 10})
-        
-        # The last message is the final response from the agent
-        final_message = final_state["messages"][-1]
-        
-        # Extract chunks from ToolMessages
-        chunks = ""
-        for msg in final_state["messages"]:
-            if isinstance(msg, ToolMessage):
-                chunks += msg.content + "\n\n"
-        
+        result = run_retrieval_flow(request.query, recursion_limit=10)
         return RetrievalResponse(
-            answer=final_message.content, 
-            chunks=chunks.strip() if chunks else None
+            answer=result["answer"],
+            chunks=result["chunks_text"],
         )
         
     except Exception as e:

@@ -113,12 +113,22 @@ uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 
 ---
 
+### Step 4: Run the Streamlit frontend app
+```bash
+uv run streamlit run frontend/app.py
+```
+
+---
+
+
 ## 📁 Project Structure (Optional Overview)
 
 ```
 .
 ├── app/                # FastAPI application
 ├── tests/              # Test suite
+├── docs/               # Documentation
+├── frontend/           # Streamlit frontend
 ├── docker-compose.yml
 ├── docker-compose.gpu.yml
 ├── docker-compose.infra.yml
@@ -170,3 +180,5 @@ pytest tests/test_parser_chunker.py::test_docx_parser_and_chunker -v
 ```
 uv run celery -A app.workers.celery_app:celery worker --loglevel=info
 ```
+
+uv run python -c "from huggingface_hub import snapshot_download; snapshot_download('ramsrigouthamg/t5_squad_v1')"

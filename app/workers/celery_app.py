@@ -1,3 +1,5 @@
+import os
+
 from celery import Celery
 
 from app.core.config import settings
@@ -17,5 +19,14 @@ celery.conf.update(
     broker_connection_retry_on_startup=True,
     task_ignore_result=True,  # Global ignore as we use a separate tracking DB
 )
+
+# Celery's default prefork pool relies on billiard process primitives that are
+# unstable on Windows. Use a single-process pool for local Windows development.
+if os.name == "nt":
+    celery.conf.update(
+        worker_pool="solo",
+        worker_concurrency=1,
+        worker_prefetch_multiplier=1,
+    )
 
 celery.autodiscover_tasks(["app.workers"])

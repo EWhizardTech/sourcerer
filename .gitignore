@@ -211,3 +211,6 @@ secrets/
 
 tests/results/
 uv.lock
+data/sourcerer.db
+.vscode/
+data/sourcerer.db

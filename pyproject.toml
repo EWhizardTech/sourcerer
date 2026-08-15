@@ -26,10 +26,16 @@ dependencies = [
     "langgraph>=1.1.6",
     "langchain-groq>=1.1.2",
     "tavily-python>=0.7.23",
+    "transformers>=5.5.0",
+    "sentencepiece>=0.2.1",
+    "nltk>=3.9.4",
+    "spacy>=3.8.14",
+    "scikit-learn>=1.8.0",
 ]
 
 [dependency-groups]
 dev = [
+    "huggingface-hub>=1.8.0",
     "pytest>=9.0.2",
 ]
  

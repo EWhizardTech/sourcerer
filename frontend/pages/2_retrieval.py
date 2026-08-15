@@ -1,8 +1,6 @@
 import streamlit as st
-from components.api import retrieve_chunks
-from components.styling import apply_custom_styles, render_page_header
-
 from components.api import retrieve_answer
+from components.styling import apply_custom_styles, render_page_header
 
 st.set_page_config(page_title="Retrieval | Sourcerer", page_icon="🔍")
 apply_custom_styles()

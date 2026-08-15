@@ -1,8 +1,10 @@
+import os
+
 import requests
 import streamlit as st
 
-# Default to 8000, assuming backend runs locally on port 8000
-BACKEND_URL = "http://127.0.0.1:8000"
+# Default to 8000 (local uvicorn); the dockerized API is published on 8001.
+BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 
 
 def get_health() -> bool:

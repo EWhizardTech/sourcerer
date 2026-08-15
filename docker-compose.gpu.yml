@@ -1,9 +1,9 @@
+# GPU override: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+# NOTE: the default image ships CPU torch (see [tool.uv.sources] in pyproject.toml).
+# For CUDA in the container, point the linux torch source at a CUDA index
+# (e.g. pytorch-cu128), run `uv lock`, and rebuild the base image.
 services:
   worker:
-    build:
-      context: .
-      args:
-        TORCH_EXTRA_INDEX: https://download.pytorch.org/whl/cu126
     deploy:
       resources:
         reservations:

@@ -4,8 +4,7 @@ services:
   api:
     build:
       context: .
-      cache_from:
-        - premdharshan/sourcerer-base:latest
+    image: sourcerer-app:latest
     restart: unless-stopped
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     depends_on:
@@ -14,19 +13,31 @@ services:
       - "8001:8000"
     env_file:
       - .env
+    environment:
+      # Inside the compose network, Redis is reached via its service name.
+      REDIS_URL: redis://redis:6379
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_BACKEND_URL: redis://redis:6379/1
+    volumes:
+      - ./secrets:/app/secrets:ro
+      - ./.cache:/app/.cache
 
   worker:
-    build:
-      context: .
-      cache_from:
-        - premdharshan/sourcerer-base:latest
+    image: sourcerer-app:latest
     command: celery -A app.workers.celery_app.celery worker --loglevel=info
     depends_on:
+      - api
       - redis
     env_file:
       - .env
-    args:
-      TORCH_EXTRA_INDEX: https://download.pytorch.org/whl/cu126
+    environment:
+      # Inside the compose network, Redis is reached via its service name.
+      REDIS_URL: redis://redis:6379
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_BACKEND_URL: redis://redis:6379/1
+    volumes:
+      - ./secrets:/app/secrets:ro
+      - ./.cache:/app/.cache
 
   redis:
     image: redis:latest

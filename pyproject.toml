@@ -3,7 +3,7 @@ name = "sourcerer-backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13,<3.14"
 dependencies = [
     "fastapi>=0.135.1",
     "google-api-python-client>=2.193.0",
@@ -18,7 +18,8 @@ dependencies = [
     "pytest>=9.0.2",
     "docling>=2.82.0",
     "pymupdf>=1.26.5",
-    "fitz>=0.0.1.dev2",
+    "torch>=2.11.0",
+    "torchvision>=0.26.0",
     "groq>=0.30.0,<1",
     "google-genai>=1.69.0",
     "streamlit>=1.42.0",
@@ -40,14 +41,22 @@ dev = [
 ]
  
 [tool.uv.sources]
+# CPU wheels in Linux containers (small, fast builds); CUDA wheels for local Windows dev.
 torch = [
-  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  { index = "pytorch-cpu", marker = "sys_platform == 'linux'" },
+  { index = "pytorch-cu128", marker = "sys_platform == 'win32'" },
 ]
 torchvision = [
-  { index = "pytorch-cu128", marker = "sys_platform == 'linux' or sys_platform == 'win32'" },
+  { index = "pytorch-cpu", marker = "sys_platform == 'linux'" },
+  { index = "pytorch-cu128", marker = "sys_platform == 'win32'" },
 ]
 
 [[tool.uv.index]]
 name = "pytorch-cu128"
 url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
 explicit = true

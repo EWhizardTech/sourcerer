@@ -7,9 +7,14 @@ consumes the subset it needs; unknown env vars are ignored.
 from typing import Optional
 
 from dotenv import load_dotenv
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv()
+
+# The committed dev default for PORTAL_SESSION_SECRET — usable locally, but
+# refused when the portal runs in production (PORTAL_COOKIE_SECURE=true).
+_INSECURE_SESSION_SECRET = "dev-insecure-change-me-dev-insecure-change-me"
 
 
 class Settings(BaseSettings):
@@ -77,13 +82,17 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     # Must match an authorized redirect URI on the OAuth client — the gateway URL.
     GOOGLE_CALLBACK_URL: str = "http://localhost:8001/api/v1/portal/auth/callback"
-    # HS256 key for portal session JWTs. Override in production.
-    PORTAL_SESSION_SECRET: str = "dev-insecure-change-me-dev-insecure-change-me"
+    # HS256 key for portal session JWTs. MUST be overridden in production; the
+    # _validate_portal_production check below refuses this default when
+    # PORTAL_COOKIE_SECURE is true.
+    PORTAL_SESSION_SECRET: str = _INSECURE_SESSION_SECRET
     PORTAL_SESSION_TTL_SECONDS: int = 60 * 60 * 24 * 7  # 7 days
     # Comma-separated emails treated as portal admins (evaluated per request).
     ADMIN_EMAILS: str = ""
     # Drive folder the portal catalogs (metadata only — never file contents).
-    PORTAL_ROOT_FOLDER_ID: str = "1f8E8ZIZO0Rhfwi6VO3OJlGBIMLDDaemL"
+    # No default: the concrete ID belongs in .env / compose, so a deployment
+    # never silently inherits someone else's library. Required in production.
+    PORTAL_ROOT_FOLDER_ID: str = ""
     # Where the browser is sent after OAuth completes.
     PORTAL_FRONTEND_ORIGIN: str = "http://localhost:3001"
     # Origins allowed to send state-changing portal requests (CSRF guard).
@@ -102,6 +111,30 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",  # Ignore unknown env vars gracefully.
     )
+
+    @model_validator(mode="after")
+    def _validate_portal_production(self) -> "Settings":
+        """Fail closed on weak portal config in production. PORTAL_COOKIE_SECURE
+        is only set behind HTTPS (the beta/prod deployments), so this never
+        trips local dev but stops a real deployment from booting on the public
+        default signing key or an unset root folder."""
+        if self.PORTAL_COOKIE_SECURE:
+            secret = self.PORTAL_SESSION_SECRET
+            if (
+                not secret
+                or secret == _INSECURE_SESSION_SECRET
+                or len(secret) < 32
+            ):
+                raise ValueError(
+                    "PORTAL_SESSION_SECRET must be a strong (>=32 char) random "
+                    "value in production; refusing to start on a weak or default "
+                    "session key."
+                )
+            if not self.PORTAL_ROOT_FOLDER_ID:
+                raise ValueError(
+                    "PORTAL_ROOT_FOLDER_ID must be set in production."
+                )
+        return self
 
 
 # Singleton instance imported by other modules.

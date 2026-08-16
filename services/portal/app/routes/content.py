@@ -7,8 +7,10 @@ successful content hit writes an audit row.
 
 import asyncio
 import logging
+import re
 import time
 from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import FileResponse, StreamingResponse
@@ -39,6 +41,17 @@ _TEXT_EXTENSIONS = {
 # Cached service-account bearer token (valid ~1h, refresh at 50min).
 _token_cache: dict = {"token": None, "acquired": 0.0}
 _token_lock = asyncio.Lock()
+
+
+def _content_disposition(filename: str) -> str:
+    """Build an inline Content-Disposition that survives Starlette's latin-1
+    header encoding. Non-latin-1 names (CJK, em dashes, curly quotes) would
+    otherwise raise UnicodeEncodeError and 500 the view. Per RFC 6266/5987 we
+    emit an ASCII fallback plus a UTF-8 filename* that modern browsers prefer."""
+    fallback = (
+        re.sub(r'[\r\n"\\]', "_", filename).encode("ascii", "replace").decode("ascii")
+    )
+    return f"inline; filename=\"{fallback}\"; filename*=UTF-8''{quote(filename, safe='')}"
 
 
 async def _drive_token() -> str:
@@ -161,7 +174,7 @@ async def raw(
         headers={
             **passthrough,
             **_NO_STORE,
-            "Content-Disposition": f'inline; filename="{node.name}"',
+            "Content-Disposition": _content_disposition(node.name),
         },
     )
 
@@ -186,6 +199,6 @@ async def converted_pdf(file_id: str, user: CurrentUser, db: DbSession) -> FileR
         media_type="application/pdf",
         headers={
             **_NO_STORE,
-            "Content-Disposition": f'inline; filename="{Path(node.name).stem}.pdf"',
+            "Content-Disposition": _content_disposition(f"{Path(node.name).stem}.pdf"),
         },
     )

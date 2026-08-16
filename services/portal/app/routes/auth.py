@@ -90,14 +90,24 @@ async def callback(request: Request, db: DbSession) -> RedirectResponse:
         return error_redirect
 
     id_token = token_resp.json().get("id_token", "")
-    # Signature already vouched for by the direct TLS exchange; check claims.
-    claims = jwt.decode(
-        id_token,
-        options={"verify_signature": False, "verify_exp": True},
-        audience=settings.GOOGLE_CLIENT_ID,
-        algorithms=["RS256"],
-    )
-    if claims.get("iss") not in _GOOGLE_ISSUERS or not claims.get("sub"):
+    # Signature already vouched for by the direct TLS exchange; the bytes come
+    # straight from Google's token endpoint, so we validate the claims rather
+    # than re-fetch signing certs. A malformed/empty token must degrade to the
+    # graceful error redirect, never a 500 — hence the guard. verify_signature
+    # off also disables PyJWT's aud/exp checks, so we assert them by hand.
+    try:
+        claims = jwt.decode(id_token, options={"verify_signature": False})
+    except jwt.InvalidTokenError:
+        logger.error("ID token could not be decoded")
+        return error_redirect
+
+    now_ts = datetime.now(timezone.utc).timestamp()
+    if (
+        claims.get("iss") not in _GOOGLE_ISSUERS
+        or not claims.get("sub")
+        or claims.get("aud") != settings.GOOGLE_CLIENT_ID
+        or float(claims.get("exp", 0)) < now_ts
+    ):
         logger.error("ID token claim check failed (iss=%s)", claims.get("iss"))
         return error_redirect
 

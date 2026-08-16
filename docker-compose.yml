@@ -117,6 +117,12 @@ services:
       GDRIVE_SERVICE_ACCOUNT_PATH: /srv/secrets/acc.json
       DATABASE_URL: postgresql+asyncpg://sourcerer:${POSTGRES_PASSWORD:-sourcerer}@postgres:5432/sourcerer_portal
       PORTAL_CACHE_DIR: /srv/portal-cache
+      # Where OAuth lands the browser. Defaults to :3000 (the containerized
+      # frontend this compose publishes); set PORTAL_FRONTEND_ORIGIN in .env to
+      # http://localhost:3001 if you run `next dev` on the host instead.
+      PORTAL_FRONTEND_ORIGIN: ${PORTAL_FRONTEND_ORIGIN:-http://localhost:3000}
+      # Drive folder to catalog. No source default — supply your own here/in .env.
+      PORTAL_ROOT_FOLDER_ID: ${PORTAL_ROOT_FOLDER_ID:-1f8E8ZIZO0Rhfwi6VO3OJlGBIMLDDaemL}
     volumes:
       - ./secrets:/srv/secrets:ro
       - portal-cache:/srv/portal-cache

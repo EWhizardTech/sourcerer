@@ -34,5 +34,5 @@ Streaming uses `fetch` + `ReadableStream` with a small SSE frame parser (`lib/ap
 ```bash
 cd frontend
 npm install
-NEXT_PUBLIC_API_URL=http://localhost:8001 npm run dev   # http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:8001 npm run dev   # http://localhost:3001
 ```

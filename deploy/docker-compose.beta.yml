@@ -66,6 +66,11 @@ services:
       PORTAL_FRONTEND_ORIGIN: https://${SITE_ADDRESS}
       PORTAL_ALLOWED_ORIGINS: https://${SITE_ADDRESS}
       GOOGLE_CALLBACK_URL: https://${SITE_ADDRESS}/api/v1/portal/auth/callback
+      # Critical secrets — fail the whole `up` loudly if unset, rather than
+      # silently booting the portal on its insecure dev default session key or
+      # cataloging the wrong Drive folder.
+      PORTAL_SESSION_SECRET: ${PORTAL_SESSION_SECRET:?set a strong PORTAL_SESSION_SECRET in deploy/.env}
+      PORTAL_ROOT_FOLDER_ID: ${PORTAL_ROOT_FOLDER_ID:?set PORTAL_ROOT_FOLDER_ID in deploy/.env}
       PORTAL_COOKIE_SECURE: "true"
       PORTAL_COOKIE_SAMESITE: lax
     volumes:

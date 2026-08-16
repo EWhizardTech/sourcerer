@@ -14,8 +14,10 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+# Anchored to the repo root so this Python-packaging ignore does NOT swallow
+# frontend/lib/ (the portal API client lives there).
+/lib/
+/lib64/
 parts/
 sdist/
 var/

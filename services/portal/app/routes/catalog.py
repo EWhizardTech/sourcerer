@@ -10,6 +10,18 @@ from sourcerer_core.config import settings
 router = APIRouter(prefix="/portal/catalog", tags=["catalog"])
 
 _GRAPH_NODE_CAP = 1500
+_LIKE_ESCAPE = "\\"
+
+
+def _like_escape(value: str) -> str:
+    """Neutralize LIKE metacharacters so `value` matches literally (used with
+    `escape='\\'`). Without this, a search for `100%` or an id-prefix containing
+    `_` would behave as a wildcard."""
+    return (
+        value.replace(_LIKE_ESCAPE, _LIKE_ESCAPE + _LIKE_ESCAPE)
+        .replace("%", _LIKE_ESCAPE + "%")
+        .replace("_", _LIKE_ESCAPE + "_")
+    )
 
 
 def _node_payload(node: DriveNode, child_count: int | None = None) -> dict:
@@ -97,15 +109,15 @@ async def search(
     db: DbSession,
     q: str = Query(min_length=2, max_length=100),
 ) -> dict:
-    pattern = f"%{q}%"
+    pattern = f"%{_like_escape(q)}%"
     rows = (
         (
             await db.execute(
                 select(DriveNode)
                 .where(
                     or_(
-                        DriveNode.name.ilike(pattern),
-                        DriveNode.path_names.ilike(pattern),
+                        DriveNode.name.ilike(pattern, escape=_LIKE_ESCAPE),
+                        DriveNode.path_names.ilike(pattern, escape=_LIKE_ESCAPE),
                     )
                 )
                 .order_by(DriveNode.is_folder.desc(), DriveNode.depth)
@@ -145,7 +157,9 @@ async def graph(
     query = (
         select(DriveNode)
         .where(
-            DriveNode.path_ids.like(f"{root.path_ids}%"),
+            DriveNode.path_ids.like(
+                f"{_like_escape(root.path_ids)}%", escape=_LIKE_ESCAPE
+            ),
             DriveNode.depth <= root.depth + depth,
         )
         .order_by(DriveNode.depth)

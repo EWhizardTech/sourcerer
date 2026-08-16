@@ -64,7 +64,7 @@ Python 3.13 · FastAPI · LangGraph + Groq (chat agent) · Gemini embeddings · 
 
 ```bash
 uv sync --all-packages                     # Python workspace (single lockfile)
-cd frontend && npm install && npm run dev  # UI on :3000
+cd frontend && npm install && npm run dev  # UI on :3001 (host dev server)
 ```
 
 Run tests per package:

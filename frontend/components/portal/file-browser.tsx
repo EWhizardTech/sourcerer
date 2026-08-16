@@ -171,26 +171,38 @@ export default function FileBrowser({
     enabled: virtualRoot,
   });
 
-  const { data: childrenData, isLoading: childrenLoading } = useQuery({
+  const {
+    data: childrenData,
+    isLoading: childrenLoading,
+    isError: childrenError,
+  } = useQuery({
     queryKey: ["catalog-children", folderId],
     queryFn: () => getChildren(folderId),
     staleTime: 5 * 60_000,
     enabled: !virtualRoot,
+    retry: 1,
   });
 
-  // Resolve a deep link into breadcrumbs (parent carries the full path).
+  // Resolve a deep link into breadcrumbs (parent carries the full path). If the
+  // linked folder can't be loaded (swept from the catalog, network error), fall
+  // back to the root rather than leaving pendingLink stuck true forever.
   useEffect(() => {
-    if (!pendingLink || !childrenData) return;
-    const parent = childrenData.parent;
-    if (parent.id === pendingLink) {
-      const ids = parent.path_ids.split("/").filter(Boolean);
-      const names = parent.path.split("/");
-      setCrumbs(
-        ids.slice(1).map((id, i) => ({ id, name: names[i + 1] ?? "…" }))
-      );
+    if (!pendingLink) return;
+    if (childrenData) {
+      const parent = childrenData.parent;
+      if (parent.id === pendingLink) {
+        const ids = parent.path_ids.split("/").filter(Boolean);
+        const names = parent.path.split("/");
+        setCrumbs(
+          ids.slice(1).map((id, i) => ({ id, name: names[i + 1] ?? "…" }))
+        );
+      }
+      setPendingLink(null);
+    } else if (childrenError) {
+      setPendingLink(null);
+      setCrumbs([]);
     }
-    setPendingLink(null);
-  }, [pendingLink, childrenData]);
+  }, [pendingLink, childrenData, childrenError]);
 
   // Keep the URL shareable: mirror the current folder into ?folder=.
   useEffect(() => {

@@ -8,15 +8,27 @@ exactly itself). One indexed LIKE — no recursive walk.
 
 from datetime import datetime, timezone
 
-from sqlalchemy import literal, select
+from sqlalchemy import func, literal, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import DriveNode, Grant, User
 from app.services.security import is_admin_email
 
+_LIKE_ESCAPE = "\\"
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
+
+
+def _like_escaped(column):
+    """SQL expression that neutralizes LIKE metacharacters (`\\`, `%`, `_`) in a
+    column's value so it can be used as a literal prefix. Drive IDs contain `_`,
+    which would otherwise act as a single-char wildcard and make the subtree
+    access check match unrelated siblings (fail open)."""
+    escaped = func.replace(column, _LIKE_ESCAPE, _LIKE_ESCAPE + _LIKE_ESCAPE)
+    escaped = func.replace(escaped, "%", _LIKE_ESCAPE + "%")
+    return func.replace(escaped, "_", _LIKE_ESCAPE + "_")
 
 
 async def user_can_access(db: AsyncSession, user: User, node: DriveNode) -> bool:
@@ -32,7 +44,9 @@ async def user_can_access(db: AsyncSession, user: User, node: DriveNode) -> bool
                 Grant.status == "active",
                 Grant.starts_at <= now,
                 Grant.expires_at >= now,
-                literal(node.path_ids).like(DriveNode.path_ids + "%"),
+                literal(node.path_ids).like(
+                    _like_escaped(DriveNode.path_ids) + "%", escape=_LIKE_ESCAPE
+                ),
             )
             .limit(1)
         )

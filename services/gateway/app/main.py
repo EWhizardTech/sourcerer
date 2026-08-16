@@ -119,7 +119,11 @@ async def aggregate_health(request: Request) -> JSONResponse:
     results = dict(
         await asyncio.gather(*(check(n, b) for n, b in SERVICES.items()))
     )
-    overall = "ok" if all(r["status"] == "ok" for r in results.values()) else "degraded"
+    overall = (
+        "ok"
+        if results and all(r["status"] == "ok" for r in results.values())
+        else "degraded"
+    )
     return JSONResponse({"status": overall, "gateway": "ok", "services": results})
 
 

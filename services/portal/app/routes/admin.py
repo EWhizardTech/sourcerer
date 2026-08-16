@@ -30,6 +30,20 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _as_utc(dt: datetime | None) -> datetime | None:
+    """Coerce a client-supplied datetime to tz-aware UTC. Pydantic yields a
+    naive datetime for ISO strings without an offset (e.g. from Swagger or an
+    ad-hoc script); comparing that to _utcnow() would raise TypeError → 500."""
+    if dt is not None and dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
+
+
+# Retain references to detached background tasks so the event loop can't
+# garbage-collect a running sync mid-flight (which would wedge status.running).
+_background_tasks: set[asyncio.Task] = set()
+
+
 class ApproveBody(BaseModel):
     starts_at: datetime | None = None
     expires_at: datetime | None = None  # default: starts_at + requested_days
@@ -121,15 +135,19 @@ async def approve_request(
             )
         ).scalars()
     )
-    node_ids = body.node_ids if body.node_ids else item_ids
+    # `is None` distinguishes "unset -> grant everything requested" from an
+    # explicit empty selection, which must grant nothing (400 below).
+    node_ids = item_ids if body.node_ids is None else body.node_ids
     unknown = [n for n in node_ids if n not in set(item_ids)]
     if unknown:
         raise HTTPException(status_code=400, detail=f"Not in request: {unknown[:5]}")
     if not node_ids:
         raise HTTPException(status_code=400, detail="No items to grant")
 
-    starts_at = body.starts_at or _utcnow()
-    expires_at = body.expires_at or starts_at + timedelta(days=req.requested_days)
+    starts_at = _as_utc(body.starts_at) or _utcnow()
+    expires_at = _as_utc(body.expires_at) or starts_at + timedelta(
+        days=req.requested_days
+    )
     if expires_at <= starts_at:
         raise HTTPException(status_code=400, detail="expires_at must be after starts_at")
 
@@ -232,13 +250,13 @@ async def patch_grant(
     ).scalar_one_or_none()
     if grant is None:
         raise HTTPException(status_code=404, detail="Grant not found")
-    grant.expires_at = body.expires_at
+    grant.expires_at = _as_utc(body.expires_at)
     await audit.record(
         db,
         "grant_updated",
         user_id=admin.id,
         node_id=grant.node_id,
-        meta={"grant_id": str(grant.id), "expires_at": body.expires_at.isoformat()},
+        meta={"grant_id": str(grant.id), "expires_at": grant.expires_at.isoformat()},
     )
     await db.commit()
     return {"ok": True, "expires_at": grant.expires_at.isoformat()}
@@ -335,7 +353,9 @@ async def trigger_sync(_: CurrentAdmin) -> dict:
         except Exception:  # already logged inside run_sync
             pass
 
-    asyncio.get_running_loop().create_task(_run())
+    task = asyncio.get_running_loop().create_task(_run())
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
     return {"started": True}
 
 

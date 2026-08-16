@@ -46,6 +46,6 @@ All Python services depend on `libs/sourcerer-core` (a [uv workspace](https://do
 ## Design decisions
 
 - **Services keep an internal `app/` package** and run with their own working directory — conventional per-service FastAPI layout with minimal import churn.
-- **One lockfile** (`uv.lock`) governs the whole workspace; each Docker image installs only its own package's dependencies (`uv sync --package …`), so the gateway image stays tiny while quiz/ingestion carry their ML stacks.
+- **One lockfile** (`uv.lock`) governs the whole workspace; each Docker image installs only its own package's dependencies (`uv sync --package …`), so the gateway image stays tiny while quiz/ingestion carry their ML stacks. Images build in a uv builder stage and run on plain `python:3.13-slim`; the Celery worker reuses the ingestion image.
 - **Torch is CPU-only inside containers** (per-service `[tool.uv.sources]`); local Windows dev resolves CUDA cu128 wheels.
 - **The gateway is a dumb pipe**: no business logic, only routing, streaming passthrough, CORS, and health aggregation.

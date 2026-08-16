@@ -38,6 +38,7 @@ nav:
       - Ingestion: services/ingestion.md
       - Retrieval: services/retrieval.md
       - Quiz: services/quiz.md
+      - Portal: services/portal.md
   - Frontend: frontend.md
   - Deployment: deployment.md
   - Development: development.md

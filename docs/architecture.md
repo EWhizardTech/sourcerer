@@ -1,6 +1,6 @@
 # Architecture
 
-Sourcerer is a microservice system: four backend services behind an API gateway, a decoupled Next.js frontend, Redis for queueing and chat memory, and a managed Qdrant cluster for vector search.
+Sourcerer is a microservice system: five backend services behind an API gateway, a decoupled Next.js frontend, Redis for queueing and chat memory, Postgres for the resource portal, and a managed Qdrant cluster for vector search.
 
 ```mermaid
 graph LR
@@ -9,6 +9,10 @@ graph LR
     GW -->|/api/v1/ingest| ING[Ingestion Service]
     GW -->|/api/v1/chat, /retrieve| RET[Retrieval Service]
     GW -->|/api/v1/quiz| QUIZ[Quiz Service]
+    GW -->|/api/v1/portal| PORTAL[Portal Service]
+
+    PORTAL -->|users, catalog, grants| PG[(Postgres)]
+    PORTAL -->|metadata + on-demand bytes| GDRIVE[Google Drive API]
 
     ING -->|enqueue| REDIS[(Redis)]
     W[Celery Worker] -->|consume| REDIS
@@ -32,6 +36,7 @@ graph LR
 | **ingestion-worker** | — | Runs the 8-stage pipeline: incremental check → parse (Docling/PyMuPDF) → chunk → LLM tag → embed (Gemini) → upsert (Qdrant) → track. |
 | **retrieval** | 8000 | LangGraph agent with `search_documents` / `search_web` tools; SSE streaming; Redis session memory; query condensation; cited answers. |
 | **quiz** | 8000 | Retrieves filtered chunks via `sourcerer-core` and generates MCQs with a local T5 + spaCy/NLTK pipeline. |
+| **portal** | 8000 | Google sign-in, metadata-only Drive catalog, timed access requests/grants, access-checked in-app content viewing (Range streaming + PDF conversion). No ingestion, no vector store. See [Portal Service](services/portal.md). |
 
 ## Shared library — `sourcerer-core`
 

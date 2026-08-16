@@ -4,6 +4,10 @@ import { API_URL } from "./api";
 
 const BASE = `${API_URL}/api/v1/portal`;
 
+// Marks a request as coming from the SPA (not a pasted URL / curl). The content
+// endpoints require it; a top-level navigation can't send a custom header.
+const CLIENT_HEADER = { "X-Sourcerer-Client": "1" } as const;
+
 /* ---------- Types ---------- */
 
 export interface Me {
@@ -159,6 +163,7 @@ function get<T>(path: string): Promise<T> {
   return fetch(`${BASE}${path}`, {
     credentials: "include",
     cache: "no-store",
+    headers: { ...CLIENT_HEADER },
   }).then((r) => jsonOrThrow<T>(r));
 }
 
@@ -166,7 +171,10 @@ function send<T>(method: string, path: string, body?: unknown): Promise<T> {
   return fetch(`${BASE}${path}`, {
     method,
     credentials: "include",
-    headers: body !== undefined ? { "Content-Type": "application/json" } : {},
+    headers: {
+      ...CLIENT_HEADER,
+      ...(body !== undefined ? { "Content-Type": "application/json" } : {}),
+    },
     body: body !== undefined ? JSON.stringify(body) : undefined,
   }).then((r) => jsonOrThrow<T>(r));
 }
@@ -272,7 +280,11 @@ export const contentPdfUrl = (fileId: string) => `${BASE}/content/${fileId}/pdf`
 
 /** Credentialed fetch of content bytes (images, pdf data, text). */
 export async function fetchContent(url: string): Promise<Response> {
-  const resp = await fetch(url, { credentials: "include", cache: "no-store" });
+  const resp = await fetch(url, {
+    credentials: "include",
+    cache: "no-store",
+    headers: { ...CLIENT_HEADER },
+  });
   if (!resp.ok) {
     let detail = `${resp.status} ${resp.statusText}`;
     try {

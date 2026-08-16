@@ -107,6 +107,32 @@ def classify_viewer(node: DriveNode) -> str:
     return "unsupported"
 
 
+def _guard_content_request(request: Request) -> None:
+    """Allow content bytes only for in-app requests, not direct URL access.
+
+    Sec-Fetch-* are browser-set and cannot be forged by page script, so they
+    reliably distinguish an in-app fetch()/media load from a top-level
+    navigation (open-in-new-tab / address bar). We additionally require the
+    SPA's custom header, which curl and navigations don't send. This blocks the
+    'copy the /raw URL from DevTools and open/share it' vector and casual curl.
+    It cannot stop a user who replays the app's exact request (their own cookie
+    + header) — that byte access is inherent to being granted the file.
+    """
+    h = request.headers
+    # 1) Never serve a top-level navigation.
+    if h.get("sec-fetch-mode") == "navigate" or h.get("sec-fetch-dest") == "document":
+        raise HTTPException(status_code=403, detail="Open Sourcerer to view this file")
+    # 2) SPA fetch() carries our header; a <video>/<img> element can't add
+    #    headers, so allow same-origin/-site media loads by Sec-Fetch instead.
+    if h.get("x-sourcerer-client") == "1":
+        return
+    if h.get("sec-fetch-site") in {"same-origin", "same-site"} and h.get(
+        "sec-fetch-dest"
+    ) in {"video", "audio", "image"}:
+        return
+    raise HTTPException(status_code=403, detail="Direct content access not allowed")
+
+
 async def _accessible_node(
     file_id: str, user: CurrentUser, db: DbSession
 ) -> DriveNode:
@@ -123,7 +149,10 @@ async def _accessible_node(
 
 
 @router.get("/{file_id}/meta")
-async def meta(file_id: str, user: CurrentUser, db: DbSession) -> dict:
+async def meta(
+    file_id: str, request: Request, user: CurrentUser, db: DbSession
+) -> dict:
+    _guard_content_request(request)
     node = await _accessible_node(file_id, user, db)
     return {
         "id": node.id,
@@ -142,6 +171,7 @@ async def meta(file_id: str, user: CurrentUser, db: DbSession) -> dict:
 async def raw(
     file_id: str, request: Request, user: CurrentUser, db: DbSession
 ) -> StreamingResponse:
+    _guard_content_request(request)
     node = await _accessible_node(file_id, user, db)
     if node.mime_type in GOOGLE_EXPORT_PDF:
         raise HTTPException(status_code=409, detail="Use the /pdf endpoint")
@@ -204,7 +234,10 @@ async def raw(
 
 
 @router.get("/{file_id}/pdf")
-async def converted_pdf(file_id: str, user: CurrentUser, db: DbSession) -> FileResponse:
+async def converted_pdf(
+    file_id: str, request: Request, user: CurrentUser, db: DbSession
+) -> FileResponse:
+    _guard_content_request(request)
     node = await _accessible_node(file_id, user, db)
     if node.mime_type not in GOOGLE_EXPORT_PDF | OFFICE_TO_PDF:
         raise HTTPException(status_code=409, detail="Use the /raw endpoint")

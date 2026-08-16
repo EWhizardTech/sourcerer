@@ -200,7 +200,8 @@ export function VideoViewer({ fileId }: { fileId: string }) {
       controls
       controlsList="nodownload noremoteplayback"
       disablePictureInPicture
-      crossOrigin="use-credentials"
+      // no crossOrigin: media requests send cookies by default, and Chrome's
+      // credentialed-CORS media path stalls without ever issuing the request
       className="mx-auto max-h-[80vh] w-full max-w-4xl rounded-xl bg-black"
     />
   );

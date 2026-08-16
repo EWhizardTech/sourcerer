@@ -110,11 +110,18 @@ async def raw(
         raise HTTPException(status_code=409, detail="Use the /pdf endpoint")
 
     token = await _drive_token()
-    upstream_headers = {"Authorization": f"Bearer {token}"}
+    # identity: Drive otherwise gzips (aiter_raw would forward compressed
+    # bytes), and Range offsets must refer to the real file bytes.
+    upstream_headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept-Encoding": "identity",
+    }
     if range_header := request.headers.get("range"):
         upstream_headers["Range"] = range_header
 
-    client = httpx.AsyncClient(timeout=httpx.Timeout(connect=10.0, read=None))
+    client = httpx.AsyncClient(
+        timeout=httpx.Timeout(10.0, read=None)  # no read timeout: large streams
+    )
     upstream = client.build_request(
         "GET",
         f"{_DRIVE_FILES_URL}/{node.id}",

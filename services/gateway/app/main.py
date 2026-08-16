@@ -146,20 +146,18 @@ async def proxy(request: Request, path: str):
             {"detail": f"Service unavailable: {upstream}"}, status_code=503
         )
 
-    response_headers = {
-        k: v
-        for k, v in upstream_response.headers.items()
-        if k.lower() not in HOP_BY_HOP
-    }
-    # aiter_raw() forwards bytes verbatim, so the upstream Content-Length stays
-    # valid — keep it (video 206 responses need it for reliable seeking).
-    if "content-length" in upstream_response.headers:
-        response_headers["content-length"] = upstream_response.headers["content-length"]
-
-    return StreamingResponse(
+    response = StreamingResponse(
         upstream_response.aiter_raw(),
         status_code=upstream_response.status_code,
-        headers=response_headers,
         background=BackgroundTask(upstream_response.aclose),
-        media_type=upstream_response.headers.get("content-type"),
     )
+    # Rebuild headers from multi_items(): a dict would collapse duplicate
+    # headers (multiple Set-Cookie lines become one comma-joined mess that
+    # browsers reject). aiter_raw() forwards bytes verbatim, so the upstream
+    # Content-Length stays valid — keep it (video 206 seeking needs it).
+    response.raw_headers = [
+        (k.encode("latin-1"), v.encode("latin-1"))
+        for k, v in upstream_response.headers.multi_items()
+        if k.lower() not in HOP_BY_HOP or k.lower() == "content-length"
+    ]
+    return response

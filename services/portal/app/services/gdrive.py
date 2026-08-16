@@ -28,8 +28,6 @@ _LIST_FIELDS = (
     "nextPageToken, "
     "files(id, name, mimeType, size, modifiedTime, md5Checksum, parents)"
 )
-# Drive rejects overly long `q` strings; ~20 parent clauses is safe.
-_PARENT_BATCH = 20
 
 
 class NodeRecord(TypedDict):
@@ -88,9 +86,10 @@ def _is_excluded(name: str, patterns: list[str]) -> bool:
 def walk_folder_metadata(root_folder_id: str) -> list[NodeRecord]:
     """BFS the folder tree, returning metadata records for every kept node.
 
-    Parents are queried in batches of ~20 per request (pageSize 1000), so a
-    22k-file library costs on the order of dozens of list calls, not
-    thousands. Blocking function — call via asyncio.to_thread.
+    One `files.list` per folder (pageSize 1000). OR-ing multiple `in parents`
+    clauses looks attractive but the Drive API silently returns EMPTY result
+    sets for 3+ OR'd parents (verified empirically) — never batch parents.
+    Blocking function — call via asyncio.to_thread.
     """
     service = build_drive_client()
     patterns = _exclude_patterns()
@@ -123,17 +122,17 @@ def walk_folder_metadata(root_folder_id: str) -> list[NodeRecord]:
     seen_ids: set[str] = {root["id"]}  # legacy multi-parent files dedupe
 
     while queue:
-        batch: list[str] = []
-        while queue and len(batch) < _PARENT_BATCH:
-            folder_id = queue.popleft()
-            if folder_id not in visited:
-                visited.add(folder_id)
-                batch.append(folder_id)
-        if not batch:
+        folder_id = queue.popleft()
+        if folder_id in visited:
             continue
+        visited.add(folder_id)
+        if len(visited) % 200 == 0:
+            logger.info(
+                "Catalog walk progress: %d folders scanned, %d nodes, %d queued",
+                len(visited), len(records), len(queue),
+            )
 
-        parent_clause = " or ".join(f"'{fid}' in parents" for fid in batch)
-        query = f"({parent_clause}) and trashed=false"
+        query = f"'{folder_id}' in parents and trashed=false"
         page_token: str | None = None
 
         while True:

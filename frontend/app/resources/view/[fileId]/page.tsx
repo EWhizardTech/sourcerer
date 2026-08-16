@@ -1,0 +1,137 @@
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft, FileQuestion, Loader2, Lock } from "lucide-react";
+import Link from "next/link";
+import { use } from "react";
+import ProtectedContent from "@/components/portal/protected-content";
+import { formatSize } from "@/components/portal/folder-tree";
+import { useMe } from "@/components/portal/use-me";
+import {
+  ImageViewer,
+  MarkdownViewer,
+  PdfCanvasViewer,
+  TextViewer,
+  VideoViewer,
+} from "@/components/portal/viewers";
+import {
+  contentPdfUrl,
+  contentRawUrl,
+  getContentMeta,
+  loginUrl,
+} from "@/lib/portal-api";
+
+export default function ViewerPage({
+  params,
+}: {
+  params: Promise<{ fileId: string }>;
+}) {
+  const { fileId } = use(params);
+  const { data: me, isLoading: meLoading } = useMe();
+  const { data: meta, error, isLoading } = useQuery({
+    queryKey: ["content-meta", fileId],
+    queryFn: () => getContentMeta(fileId),
+    enabled: !!me,
+    retry: false,
+  });
+
+  if (meLoading || (me && isLoading)) {
+    return (
+      <div className="grid min-h-[70vh] place-items-center text-muted">
+        <Loader2 className="size-6 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!me) {
+    return (
+      <div className="grid min-h-[70vh] place-items-center">
+        <div className="glass max-w-md p-8 text-center">
+          <p className="text-sm text-muted">Sign in to view this resource.</p>
+          <a
+            href={loginUrl}
+            className="btn-primary mt-4 inline-block rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
+          >
+            Sign in with Google
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    const status = (error as Error & { status?: number }).status;
+    return (
+      <div className="grid min-h-[70vh] place-items-center">
+        <div className="glass max-w-md p-8 text-center">
+          <Lock className="mx-auto mb-3 size-8 text-warning" />
+          <h1 className="font-semibold">
+            {status === 403 ? "No active access" : "Unavailable"}
+          </h1>
+          <p className="mt-2 text-sm text-muted">
+            {status === 403
+              ? "You don't have an active grant covering this file. Select it in the library and request access."
+              : (error as Error).message}
+          </p>
+          <Link
+            href="/resources"
+            className="btn-primary mt-5 inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
+          >
+            <ArrowLeft className="size-4" /> Back to library
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!meta) return null;
+
+  const body = (() => {
+    switch (meta.viewer) {
+      case "pdf":
+        return <PdfCanvasViewer url={contentRawUrl(fileId)} email={me.email} />;
+      case "office-pdf":
+      case "gdoc-pdf":
+        return <PdfCanvasViewer url={contentPdfUrl(fileId)} email={me.email} />;
+      case "md":
+        return <MarkdownViewer fileId={fileId} />;
+      case "text":
+        return <TextViewer fileId={fileId} />;
+      case "image":
+        return <ImageViewer fileId={fileId} name={meta.name} />;
+      case "video":
+        return <VideoViewer fileId={fileId} />;
+      default:
+        return (
+          <div className="glass grid place-items-center p-12 text-center">
+            <FileQuestion className="mb-3 size-8 text-muted" />
+            <p className="text-sm text-muted">
+              No in-app viewer for this file type ({meta.mime_type}).
+            </p>
+          </div>
+        );
+    }
+  })();
+
+  return (
+    <div className="mx-auto max-w-5xl px-8 py-8">
+      <div className="mb-5 flex items-center gap-3">
+        <Link
+          href="/resources"
+          className="glass grid size-9 shrink-0 place-items-center text-muted transition-colors hover:text-white"
+        >
+          <ArrowLeft className="size-4" />
+        </Link>
+        <div className="min-w-0">
+          <h1 className="truncate font-semibold">{meta.name}</h1>
+          <p className="truncate text-xs text-muted">
+            {meta.path}
+            {meta.size != null && ` · ${formatSize(meta.size)}`}
+          </p>
+        </div>
+      </div>
+
+      <ProtectedContent email={me.email}>{body}</ProtectedContent>
+    </div>
+  );
+}

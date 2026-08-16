@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Nav from "@/components/nav";
+import PortalProviders from "@/components/portal/providers";
 
 export const metadata: Metadata = {
   title: "Sourcerer",
@@ -13,9 +14,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <div className="ambient" />
-        <Nav />
-        <main className="relative z-10 ml-60 min-h-screen">{children}</main>
+        <PortalProviders>
+          <div className="ambient" />
+          <Nav />
+          <main className="relative z-10 ml-60 min-h-screen">{children}</main>
+        </PortalProviders>
       </body>
     </html>
   );

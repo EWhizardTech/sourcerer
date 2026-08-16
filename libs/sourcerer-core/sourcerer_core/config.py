@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     # Must match an authorized redirect URI on the OAuth client — the gateway URL.
     GOOGLE_CALLBACK_URL: str = "http://localhost:8001/api/v1/portal/auth/callback"
     # HS256 key for portal session JWTs. Override in production.
-    PORTAL_SESSION_SECRET: str = "dev-insecure-change-me"
+    PORTAL_SESSION_SECRET: str = "dev-insecure-change-me-dev-insecure-change-me"
     PORTAL_SESSION_TTL_SECONDS: int = 60 * 60 * 24 * 7  # 7 days
     # Comma-separated emails treated as portal admins (evaluated per request).
     ADMIN_EMAILS: str = ""

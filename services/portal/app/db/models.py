@@ -131,7 +131,8 @@ class AccessRequestItem(Base):
     request_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("access_requests.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    node_id: Mapped[str] = mapped_column(ForeignKey("drive_nodes.id"), nullable=False)
+    # No FK: a node may be swept from the catalog after the request is made.
+    node_id: Mapped[str] = mapped_column(Text, nullable=False)
 
     __table_args__ = (UniqueConstraint("request_id", "node_id"),)
 
@@ -143,7 +144,9 @@ class Grant(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
-    node_id: Mapped[str] = mapped_column(ForeignKey("drive_nodes.id"), nullable=False)
+    # No FK: grants must survive catalog sweeps; a grant on a node that no
+    # longer exists simply matches nothing during access resolution.
+    node_id: Mapped[str] = mapped_column(Text, nullable=False)
     request_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("access_requests.id"))
     starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

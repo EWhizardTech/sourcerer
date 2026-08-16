@@ -1,0 +1,344 @@
+"""Admin endpoints: request approval/denial, grant management, sync, audit."""
+
+import asyncio
+import logging
+import uuid
+from datetime import datetime, timedelta, timezone
+
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
+from sqlalchemy import select
+
+from app.db.models import (
+    AccessRequest,
+    AccessRequestItem,
+    AuditEvent,
+    DriveNode,
+    Grant,
+    User,
+)
+from app.db.session import SessionLocal
+from app.deps import CurrentAdmin, DbSession
+from app.services import audit, catalog_sync
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/portal/admin", tags=["admin"])
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class ApproveBody(BaseModel):
+    starts_at: datetime | None = None
+    expires_at: datetime | None = None  # default: starts_at + requested_days
+    node_ids: list[str] | None = Field(default=None, max_length=100)  # subset
+
+
+class DenyBody(BaseModel):
+    reason: str | None = Field(default=None, max_length=2000)
+
+
+class PatchGrantBody(BaseModel):
+    expires_at: datetime
+
+
+@router.get("/requests")
+async def list_requests(
+    _: CurrentAdmin,
+    db: DbSession,
+    status: str = Query(default="pending"),
+) -> dict:
+    reqs = (
+        (
+            await db.execute(
+                select(AccessRequest, User)
+                .join(User, User.id == AccessRequest.user_id)
+                .where(AccessRequest.status == status)
+                .order_by(AccessRequest.created_at.desc())
+                .limit(200)
+            )
+        )
+        .all()
+    )
+    request_ids = [r.id for r, _u in reqs]
+    items_rows = (
+        (
+            await db.execute(
+                select(AccessRequestItem, DriveNode)
+                .outerjoin(DriveNode, DriveNode.id == AccessRequestItem.node_id)
+                .where(AccessRequestItem.request_id.in_(request_ids))
+            )
+        ).all()
+        if request_ids
+        else []
+    )
+    grouped: dict[uuid.UUID, list] = {rid: [] for rid in request_ids}
+    for item, node in items_rows:
+        grouped[item.request_id].append(
+            {
+                "node_id": item.node_id,
+                "name": node.name if node else "(removed from library)",
+                "path": node.path_names if node else None,
+                "is_folder": node.is_folder if node else False,
+            }
+        )
+    return {
+        "requests": [
+            {
+                "id": str(req.id),
+                "status": req.status,
+                "requested_days": req.requested_days,
+                "message": req.message,
+                "created_at": req.created_at.isoformat(),
+                "user": {"email": user.email, "name": user.name},
+                "items": grouped[req.id],
+            }
+            for req, user in reqs
+        ]
+    }
+
+
+@router.post("/requests/{request_id}/approve")
+async def approve_request(
+    request_id: uuid.UUID, body: ApproveBody, admin: CurrentAdmin, db: DbSession
+) -> dict:
+    req = (
+        await db.execute(select(AccessRequest).where(AccessRequest.id == request_id))
+    ).scalar_one_or_none()
+    if req is None:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if req.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Request is {req.status}")
+
+    item_ids = list(
+        (
+            await db.execute(
+                select(AccessRequestItem.node_id).where(
+                    AccessRequestItem.request_id == req.id
+                )
+            )
+        ).scalars()
+    )
+    node_ids = body.node_ids if body.node_ids else item_ids
+    unknown = [n for n in node_ids if n not in set(item_ids)]
+    if unknown:
+        raise HTTPException(status_code=400, detail=f"Not in request: {unknown[:5]}")
+    if not node_ids:
+        raise HTTPException(status_code=400, detail="No items to grant")
+
+    starts_at = body.starts_at or _utcnow()
+    expires_at = body.expires_at or starts_at + timedelta(days=req.requested_days)
+    if expires_at <= starts_at:
+        raise HTTPException(status_code=400, detail="expires_at must be after starts_at")
+
+    for node_id in node_ids:
+        db.add(
+            Grant(
+                user_id=req.user_id,
+                node_id=node_id,
+                request_id=req.id,
+                starts_at=starts_at,
+                expires_at=expires_at,
+                status="active",
+                granted_by=admin.id,
+            )
+        )
+    req.status = "approved"
+    req.decided_at = _utcnow()
+    req.decided_by = admin.id
+    await audit.record(
+        db,
+        "request_approved",
+        user_id=admin.id,
+        meta={
+            "request_id": str(req.id),
+            "node_ids": node_ids,
+            "expires_at": expires_at.isoformat(),
+        },
+    )
+    await db.commit()
+    return {"ok": True, "granted": len(node_ids), "expires_at": expires_at.isoformat()}
+
+
+@router.post("/requests/{request_id}/deny")
+async def deny_request(
+    request_id: uuid.UUID, body: DenyBody, admin: CurrentAdmin, db: DbSession
+) -> dict:
+    req = (
+        await db.execute(select(AccessRequest).where(AccessRequest.id == request_id))
+    ).scalar_one_or_none()
+    if req is None:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if req.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Request is {req.status}")
+    req.status = "denied"
+    req.decided_at = _utcnow()
+    req.decided_by = admin.id
+    await audit.record(
+        db,
+        "request_denied",
+        user_id=admin.id,
+        meta={"request_id": str(req.id), "reason": body.reason},
+    )
+    await db.commit()
+    return {"ok": True}
+
+
+@router.get("/grants")
+async def list_grants(
+    _: CurrentAdmin,
+    db: DbSession,
+    status: str = Query(default="active"),
+    user_id: uuid.UUID | None = None,
+) -> dict:
+    query = (
+        select(Grant, User, DriveNode)
+        .join(User, User.id == Grant.user_id)
+        .outerjoin(DriveNode, DriveNode.id == Grant.node_id)
+        .where(Grant.status == status)
+        .order_by(Grant.expires_at)
+        .limit(500)
+    )
+    if user_id:
+        query = query.where(Grant.user_id == user_id)
+    rows = (await db.execute(query)).all()
+    now = _utcnow()
+    return {
+        "grants": [
+            {
+                "id": str(grant.id),
+                "user": {"id": str(user.id), "email": user.email, "name": user.name},
+                "node_id": grant.node_id,
+                "name": node.name if node else "(removed from library)",
+                "path": node.path_names if node else None,
+                "is_folder": node.is_folder if node else False,
+                "starts_at": grant.starts_at.isoformat(),
+                "expires_at": grant.expires_at.isoformat(),
+                "expired": grant.expires_at < now,
+            }
+            for grant, user, node in rows
+        ]
+    }
+
+
+@router.patch("/grants/{grant_id}")
+async def patch_grant(
+    grant_id: uuid.UUID, body: PatchGrantBody, admin: CurrentAdmin, db: DbSession
+) -> dict:
+    grant = (
+        await db.execute(select(Grant).where(Grant.id == grant_id))
+    ).scalar_one_or_none()
+    if grant is None:
+        raise HTTPException(status_code=404, detail="Grant not found")
+    grant.expires_at = body.expires_at
+    await audit.record(
+        db,
+        "grant_updated",
+        user_id=admin.id,
+        node_id=grant.node_id,
+        meta={"grant_id": str(grant.id), "expires_at": body.expires_at.isoformat()},
+    )
+    await db.commit()
+    return {"ok": True, "expires_at": grant.expires_at.isoformat()}
+
+
+@router.post("/grants/{grant_id}/revoke")
+async def revoke_grant(grant_id: uuid.UUID, admin: CurrentAdmin, db: DbSession) -> dict:
+    grant = (
+        await db.execute(select(Grant).where(Grant.id == grant_id))
+    ).scalar_one_or_none()
+    if grant is None:
+        raise HTTPException(status_code=404, detail="Grant not found")
+    if grant.status == "revoked":
+        raise HTTPException(status_code=409, detail="Already revoked")
+    grant.status = "revoked"
+    grant.revoked_at = _utcnow()
+    await audit.record(
+        db,
+        "grant_revoked",
+        user_id=admin.id,
+        node_id=grant.node_id,
+        meta={"grant_id": str(grant.id)},
+    )
+    await db.commit()
+    return {"ok": True}
+
+
+@router.get("/users")
+async def list_users(_: CurrentAdmin, db: DbSession) -> dict:
+    rows = (
+        (
+            await db.execute(
+                select(User).order_by(User.last_login_at.desc().nullslast()).limit(500)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return {
+        "users": [
+            {
+                "id": str(u.id),
+                "email": u.email,
+                "name": u.name,
+                "last_login_at": (
+                    u.last_login_at.isoformat() if u.last_login_at else None
+                ),
+            }
+            for u in rows
+        ]
+    }
+
+
+@router.get("/audit")
+async def list_audit(
+    _: CurrentAdmin,
+    db: DbSession,
+    user_id: uuid.UUID | None = None,
+    limit: int = Query(default=100, ge=1, le=500),
+) -> dict:
+    query = (
+        select(AuditEvent, User)
+        .outerjoin(User, User.id == AuditEvent.user_id)
+        .order_by(AuditEvent.created_at.desc())
+        .limit(limit)
+    )
+    if user_id:
+        query = query.where(AuditEvent.user_id == user_id)
+    rows = (await db.execute(query)).all()
+    return {
+        "events": [
+            {
+                "id": event.id,
+                "event": event.event,
+                "email": user.email if user else None,
+                "node_id": event.node_id,
+                "meta": event.meta,
+                "created_at": event.created_at.isoformat(),
+            }
+            for event, user in rows
+        ]
+    }
+
+
+@router.post("/sync", status_code=202)
+async def trigger_sync(_: CurrentAdmin) -> dict:
+    """Kick off a catalog sync in the background; 409 if one is running."""
+    if catalog_sync.status["running"]:
+        raise HTTPException(status_code=409, detail="Sync already running")
+
+    async def _run() -> None:
+        try:
+            await catalog_sync.run_sync(SessionLocal)
+        except Exception:  # already logged inside run_sync
+            pass
+
+    asyncio.get_running_loop().create_task(_run())
+    return {"started": True}
+
+
+@router.get("/sync/status")
+async def sync_status(_: CurrentAdmin) -> dict:
+    return catalog_sync.status

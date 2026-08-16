@@ -1,0 +1,153 @@
+"""User-facing access request + grant endpoints."""
+
+import uuid
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy import select
+
+from app.db.models import AccessRequest, AccessRequestItem, DriveNode
+from app.deps import CurrentUser, DbSession
+from app.services import audit
+from app.services.access import active_grants
+
+router = APIRouter(prefix="/portal/requests", tags=["requests"])
+
+
+class CreateRequestBody(BaseModel):
+    node_ids: list[str] = Field(min_length=1, max_length=100)
+    requested_days: int = Field(ge=1, le=365)
+    message: str | None = Field(default=None, max_length=2000)
+
+
+def _request_payload(
+    req: AccessRequest, items: list[tuple[AccessRequestItem, DriveNode | None]]
+) -> dict:
+    return {
+        "id": str(req.id),
+        "status": req.status,
+        "requested_days": req.requested_days,
+        "message": req.message,
+        "created_at": req.created_at.isoformat(),
+        "decided_at": req.decided_at.isoformat() if req.decided_at else None,
+        "items": [
+            {
+                "node_id": item.node_id,
+                "name": node.name if node else "(removed from library)",
+                "path": node.path_names if node else None,
+                "is_folder": node.is_folder if node else False,
+            }
+            for item, node in items
+        ],
+    }
+
+
+async def _items_with_nodes(
+    db, request_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, list[tuple[AccessRequestItem, DriveNode | None]]]:
+    rows = (
+        await db.execute(
+            select(AccessRequestItem, DriveNode)
+            .outerjoin(DriveNode, DriveNode.id == AccessRequestItem.node_id)
+            .where(AccessRequestItem.request_id.in_(request_ids))
+        )
+    ).all()
+    grouped: dict[uuid.UUID, list] = {rid: [] for rid in request_ids}
+    for item, node in rows:
+        grouped[item.request_id].append((item, node))
+    return grouped
+
+
+@router.post("", status_code=201)
+async def create_request(
+    body: CreateRequestBody, user: CurrentUser, db: DbSession
+) -> dict:
+    node_ids = list(dict.fromkeys(body.node_ids))  # dedupe, keep order
+    found = set(
+        (
+            await db.execute(select(DriveNode.id).where(DriveNode.id.in_(node_ids)))
+        ).scalars()
+    )
+    missing = [n for n in node_ids if n not in found]
+    if missing:
+        raise HTTPException(status_code=400, detail=f"Unknown items: {missing[:5]}")
+
+    req = AccessRequest(
+        user_id=user.id,
+        message=body.message,
+        requested_days=body.requested_days,
+        status="pending",
+    )
+    db.add(req)
+    await db.flush()
+    for node_id in node_ids:
+        db.add(AccessRequestItem(request_id=req.id, node_id=node_id))
+    await audit.record(
+        db, "request_created", user_id=user.id, meta={"request_id": str(req.id)}
+    )
+    await db.commit()
+    items = await _items_with_nodes(db, [req.id])
+    return _request_payload(req, items[req.id])
+
+
+@router.get("/mine")
+async def my_requests(user: CurrentUser, db: DbSession) -> dict:
+    reqs = (
+        (
+            await db.execute(
+                select(AccessRequest)
+                .where(AccessRequest.user_id == user.id)
+                .order_by(AccessRequest.created_at.desc())
+                .limit(100)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    grouped = await _items_with_nodes(db, [r.id for r in reqs]) if reqs else {}
+    return {"requests": [_request_payload(r, grouped[r.id]) for r in reqs]}
+
+
+@router.post("/{request_id}/cancel")
+async def cancel_request(request_id: uuid.UUID, user: CurrentUser, db: DbSession) -> dict:
+    req = (
+        await db.execute(
+            select(AccessRequest).where(
+                AccessRequest.id == request_id, AccessRequest.user_id == user.id
+            )
+        )
+    ).scalar_one_or_none()
+    if req is None:
+        raise HTTPException(status_code=404, detail="Request not found")
+    if req.status != "pending":
+        raise HTTPException(status_code=409, detail=f"Request is {req.status}")
+    req.status = "cancelled"
+    await audit.record(
+        db, "request_cancelled", user_id=user.id, meta={"request_id": str(req.id)}
+    )
+    await db.commit()
+    return {"ok": True}
+
+
+# Grants live under /portal/requests' sibling prefix for the user view.
+grants_router = APIRouter(prefix="/portal/grants", tags=["requests"])
+
+
+@grants_router.get("/mine")
+async def my_grants(user: CurrentUser, db: DbSession) -> dict:
+    pairs = await active_grants(db, user)
+    return {
+        "grants": [
+            {
+                "id": str(grant.id),
+                "node_id": grant.node_id,
+                "name": node.name if node else "(removed from library)",
+                "path": node.path_names if node else None,
+                "path_ids": node.path_ids if node else None,
+                "is_folder": node.is_folder if node else False,
+                "starts_at": grant.starts_at.isoformat(),
+                "expires_at": grant.expires_at.isoformat(),
+            }
+            for grant, node in pairs
+        ]
+    }

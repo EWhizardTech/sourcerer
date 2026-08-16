@@ -106,9 +106,7 @@ def upgrade() -> None:
             sa.ForeignKey("access_requests.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column(
-            "node_id", sa.Text(), sa.ForeignKey("drive_nodes.id"), nullable=False
-        ),
+        sa.Column("node_id", sa.Text(), nullable=False),
         sa.UniqueConstraint("request_id", "node_id"),
     )
     op.create_index(
@@ -119,9 +117,7 @@ def upgrade() -> None:
         "grants",
         sa.Column("id", sa.Uuid(), primary_key=True),
         sa.Column("user_id", sa.Uuid(), sa.ForeignKey("users.id"), nullable=False),
-        sa.Column(
-            "node_id", sa.Text(), sa.ForeignKey("drive_nodes.id"), nullable=False
-        ),
+        sa.Column("node_id", sa.Text(), nullable=False),
         sa.Column("request_id", sa.Uuid(), sa.ForeignKey("access_requests.id")),
         sa.Column("starts_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),

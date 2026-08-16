@@ -1,0 +1,10 @@
+# Default owner for everything — reviews are requested from here on PRs.
+# Replace / extend with real GitHub handles or a team (e.g. @EWhizardTech/maintainers).
+* @Prem-Dharshan
+
+# Security-sensitive areas — keep an explicit owner on the auth/content/deploy paths.
+/services/portal/app/routes/auth.py    @Prem-Dharshan
+/services/portal/app/services/security.py @Prem-Dharshan
+/services/portal/app/routes/content.py  @Prem-Dharshan
+/deploy/                                 @Prem-Dharshan
+/.github/                                @Prem-Dharshan

@@ -1,0 +1,54 @@
+name: CI
+
+# Runs on every PR and push targeting the long-lived branches.
+on:
+  pull_request:
+    branches: [dev, staging, main]
+  push:
+    branches: [dev, staging, main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - name: Install portal deps (frozen lockfile)
+        run: uv sync --frozen --package sourcerer-portal
+      - name: Portal tests
+        working-directory: services/portal
+        run: uv run --package sourcerer-portal python -m pytest tests -q
+      - name: Gateway import smoke
+        run: uv run --package sourcerer-portal python -c "import ast; ast.parse(open('services/gateway/app/main.py').read())"
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install (pinned lockfile)
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+      - name: Type-check
+        working-directory: frontend
+        run: npx tsc --noEmit
+      - name: Build
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: ""
+        run: npm run build

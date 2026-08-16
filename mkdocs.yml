@@ -1,6 +1,7 @@
 site_name: Sourcerer
 site_description: AI-powered RAG platform for educational content
-repo_url: https://github.com/hajay180505/sourcerer-backend
+site_url: https://ewhizardtech.github.io/sourcerer/
+repo_url: https://github.com/EWhizardTech/sourcerer
 repo_name: sourcerer
 
 theme:

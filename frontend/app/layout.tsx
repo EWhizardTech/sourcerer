@@ -15,9 +15,8 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <PortalProviders>
-          <div className="ambient" />
           <Nav />
-          <main className="relative z-10 ml-60 min-h-screen">{children}</main>
+          <main className="ml-60 min-h-screen">{children}</main>
         </PortalProviders>
       </body>
     </html>

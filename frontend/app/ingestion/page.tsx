@@ -42,9 +42,9 @@ export default function IngestionPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-8 py-12">
-      <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight">
-        <span className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-violet-600/30 to-cyan-600/20 ring-1 ring-violet-500/30">
-          <FolderInput className="size-6 text-violet-300" />
+      <h1 className="flex items-center gap-3 text-3xl font-medium tracking-[-0.02em]">
+        <span className="grid size-11 place-items-center rounded-xl bg-accent-2/15 ring-1 ring-accent/25">
+          <FolderInput className="size-6 text-accent" />
         </span>
         Document <span className="gradient-text">Ingestion</span>
       </h1>
@@ -74,7 +74,7 @@ export default function IngestionPage() {
             value={folderId}
             onChange={(e) => setFolderId(e.target.value)}
             placeholder="1AbCdEfGhIjKlMnOpQrStUvWxYz…"
-            className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-3 font-mono text-sm outline-none transition focus:border-violet-500/60 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)]"
+            className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-3 font-mono text-sm outline-none transition focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(167,139,250,0.15)]"
           />
           <p className="mt-1.5 flex items-center gap-1 text-[11px] text-muted/70">
             <Info className="size-3" />
@@ -91,7 +91,7 @@ export default function IngestionPage() {
               value={courseCode}
               onChange={(e) => setCourseCode(e.target.value)}
               placeholder="20XW81"
-              className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-2.5 text-sm outline-none transition focus:border-violet-500/60"
+              className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-2.5 text-sm outline-none transition focus:border-accent/60"
             />
           </div>
           <div>
@@ -102,7 +102,7 @@ export default function IngestionPage() {
               value={year}
               onChange={(e) => setYear(e.target.value)}
               placeholder="2026"
-              className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-2.5 text-sm outline-none transition focus:border-violet-500/60"
+              className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-2.5 text-sm outline-none transition focus:border-accent/60"
             />
           </div>
         </div>
@@ -111,7 +111,7 @@ export default function IngestionPage() {
             type="checkbox"
             checked={includeRoot}
             onChange={(e) => setIncludeRoot(e.target.checked)}
-            className="size-4 accent-violet-500"
+            className="size-4 accent-accent"
           />
           Include root folder name as a tag
         </label>
@@ -142,7 +142,7 @@ export default function IngestionPage() {
                 key={f.file_id}
                 className="glass flex items-center gap-3 px-4 py-3"
               >
-                <FileText className="size-4 shrink-0 text-cyan-400" />
+                <FileText className="size-4 shrink-0 text-accent" />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">
                     {f.file_name}
@@ -151,7 +151,7 @@ export default function IngestionPage() {
                     {f.file_path}
                   </div>
                 </div>
-                <span className="shrink-0 rounded-full bg-violet-600/15 px-2.5 py-1 text-[10px] font-medium text-violet-300 ring-1 ring-violet-500/30">
+                <span className="shrink-0 rounded-full bg-accent/12 px-2.5 py-1 text-[10px] font-medium text-accent ring-1 ring-accent/25">
                   queued
                 </span>
               </div>

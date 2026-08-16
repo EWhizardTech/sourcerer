@@ -61,7 +61,7 @@ function ApproveModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -69,7 +69,7 @@ function ApproveModal({
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Approve request</h2>
-          <button onClick={onClose} className="text-muted hover:text-white">
+          <button onClick={onClose} className="text-muted hover:text-text">
             <X className="size-5" />
           </button>
         </div>
@@ -92,7 +92,7 @@ function ApproveModal({
                     return next;
                   })
                 }
-                className="size-3.5 accent-violet-500"
+                className="size-3.5 accent-accent"
               />
               <span className="truncate text-muted">
                 {item.is_folder ? "📁" : "📄"} {item.path ?? item.name}
@@ -209,8 +209,8 @@ export default function AdminPage() {
     <div className="mx-auto max-w-6xl px-8 py-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-2.5">
-          <ShieldCheck className="size-6 text-violet-400" />
-          <h1 className="text-2xl font-bold tracking-tight">Admin</h1>
+          <ShieldCheck className="size-6 text-accent" />
+          <h1 className="text-2xl font-medium tracking-[-0.02em]">Admin</h1>
         </div>
         <div className="glass flex items-center gap-3 px-4 py-2.5 text-xs text-muted">
           <span>
@@ -226,7 +226,7 @@ export default function AdminPage() {
           <button
             onClick={() => triggerSync.mutate()}
             disabled={sync?.running || triggerSync.isPending}
-            className="flex items-center gap-1.5 rounded-lg bg-violet-600/20 px-3 py-1.5 font-medium text-violet-300 transition-colors hover:bg-violet-600/30 disabled:opacity-40"
+            className="flex items-center gap-1.5 rounded-lg bg-accent/15 px-3 py-1.5 font-medium text-accent transition-colors duration-100 hover:bg-accent/25 disabled:opacity-40"
           >
             <RefreshCw
               className={`size-3.5 ${sync?.running ? "animate-spin" : ""}`}

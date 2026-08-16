@@ -109,7 +109,7 @@ export default function Dashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-4xl font-bold tracking-tight">
+        <h1 className="text-4xl font-medium tracking-[-0.02em]">
           Welcome to <span className="gradient-text">Sourcerer</span>
         </h1>
         <p className="mt-3 max-w-xl text-muted">
@@ -125,7 +125,7 @@ export default function Dashboard() {
         </h2>
         <button
           onClick={refresh}
-          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition hover:border-border-strong hover:text-white"
+          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition hover:border-border-strong hover:text-text"
         >
           <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
           Refresh
@@ -139,7 +139,7 @@ export default function Dashboard() {
           className="glass p-5"
         >
           <div className="flex items-center justify-between">
-            <Server className="size-5 text-violet-400" />
+            <Server className="size-5 text-accent" />
             <StatusDot status={error ? "down" : health ? "ok" : "..."} />
           </div>
           <div className="mt-3 font-semibold">Gateway</div>
@@ -160,7 +160,7 @@ export default function Dashboard() {
               className="glass p-5"
             >
               <div className="flex items-center justify-between">
-                <meta.icon className="size-5 text-cyan-400" />
+                <meta.icon className="size-5 text-accent" />
                 <StatusDot status={status} />
               </div>
               <div className="mt-3 font-semibold">{meta.label}</div>
@@ -186,12 +186,12 @@ export default function Dashboard() {
               href={action.href}
               className="glass glass-hover group block h-full p-6"
             >
-              <span className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-violet-600/30 to-cyan-600/20 ring-1 ring-violet-500/30">
-                <action.icon className="size-5 text-violet-300" />
+              <span className="grid size-11 place-items-center rounded-xl bg-accent-2/15 ring-1 ring-accent/25">
+                <action.icon className="size-5 text-accent" />
               </span>
               <div className="mt-4 flex items-center gap-2 font-semibold">
                 {action.title}
-                <ArrowRight className="size-4 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                <ArrowRight className="size-4 -translate-x-1 opacity-0 transition-[transform,opacity] duration-100 group-hover:translate-x-0 group-hover:opacity-100" />
               </div>
               <p className="mt-1.5 text-sm leading-relaxed text-muted">
                 {action.text}

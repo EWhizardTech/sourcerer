@@ -16,9 +16,9 @@ import { generateQuiz, type QuizItem } from "@/lib/api";
 type Phase = "setup" | "loading" | "playing" | "results";
 
 const DIFFICULTY_STYLE: Record<string, string> = {
-  Easy: "bg-emerald-500/15 text-emerald-300 ring-emerald-500/30",
-  Medium: "bg-amber-500/15 text-amber-300 ring-amber-500/30",
-  Hard: "bg-rose-500/15 text-rose-300 ring-rose-500/30",
+  Easy: "bg-success/15 text-success ring-success/30",
+  Medium: "bg-warning/15 text-warning ring-warning/30",
+  Hard: "bg-danger/15 text-danger ring-danger/30",
 };
 
 export default function QuizPage() {
@@ -94,9 +94,9 @@ export default function QuizPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-8 py-12">
-      <h1 className="flex items-center gap-3 text-3xl font-bold tracking-tight">
-        <span className="grid size-11 place-items-center rounded-xl bg-gradient-to-br from-violet-600/30 to-cyan-600/20 ring-1 ring-violet-500/30">
-          <BrainCircuit className="size-6 text-violet-300" />
+      <h1 className="flex items-center gap-3 text-3xl font-medium tracking-[-0.02em]">
+        <span className="grid size-11 place-items-center rounded-xl bg-accent-2/15 ring-1 ring-accent/25">
+          <BrainCircuit className="size-6 text-accent" />
         </span>
         Quiz <span className="gradient-text">Generator</span>
       </h1>
@@ -127,7 +127,7 @@ export default function QuizPage() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="e.g. what is information retrieval?"
                 rows={3}
-                className="w-full resize-none rounded-xl border border-border bg-surface-2/80 px-4 py-3 text-sm outline-none transition focus:border-violet-500/60 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)]"
+                className="w-full resize-none rounded-xl border border-border bg-surface-2/80 px-4 py-3 text-sm outline-none transition focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(167,139,250,0.15)]"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -139,7 +139,7 @@ export default function QuizPage() {
                   value={courseCode}
                   onChange={(e) => setCourseCode(e.target.value)}
                   placeholder="20XW81"
-                  className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-2.5 text-sm outline-none transition focus:border-violet-500/60"
+                  className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-2.5 text-sm outline-none transition focus:border-accent/60"
                 />
               </div>
               <div>
@@ -150,7 +150,7 @@ export default function QuizPage() {
                   value={year}
                   onChange={(e) => setYear(e.target.value)}
                   placeholder="2026"
-                  className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-2.5 text-sm outline-none transition focus:border-violet-500/60"
+                  className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-2.5 text-sm outline-none transition focus:border-accent/60"
                 />
               </div>
               <div>
@@ -161,7 +161,7 @@ export default function QuizPage() {
                   value={tags}
                   onChange={(e) => setTags(e.target.value)}
                   placeholder="retrieval, embeddings"
-                  className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-2.5 text-sm outline-none transition focus:border-violet-500/60"
+                  className="w-full rounded-xl border border-border bg-surface-2/80 px-4 py-2.5 text-sm outline-none transition focus:border-accent/60"
                 />
               </div>
               <div>
@@ -174,7 +174,7 @@ export default function QuizPage() {
                   max={20}
                   value={numQuestions}
                   onChange={(e) => setNumQuestions(Number(e.target.value))}
-                  className="mt-3 w-full accent-violet-500"
+                  className="mt-3 w-full accent-accent"
                 />
               </div>
             </div>
@@ -196,7 +196,7 @@ export default function QuizPage() {
             exit={{ opacity: 0 }}
             className="glass mt-8 flex flex-col items-center gap-4 p-16"
           >
-            <Loader2 className="size-8 animate-spin text-violet-400" />
+            <Loader2 className="size-8 animate-spin text-accent" />
             <p className="text-sm text-muted">
               Retrieving content and generating questions…
             </p>
@@ -226,7 +226,7 @@ export default function QuizPage() {
             </div>
             <div className="mb-6 h-1.5 overflow-hidden rounded-full bg-white/10">
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-400"
+                className="h-full rounded-full bg-accent"
                 animate={{ width: `${((index + (answered ? 1 : 0)) / items.length) * 100}%` }}
                 transition={{ duration: 0.4 }}
               />
@@ -252,7 +252,7 @@ export default function QuizPage() {
                   const isPicked = picked === option;
                   const isCorrect = option === current.answer;
                   let style =
-                    "border-border hover:border-violet-500/50 hover:bg-white/5";
+                    "border-border hover:border-accent/50 hover:bg-white/5";
                   if (answered) {
                     if (isCorrect)
                       style = "border-success/60 bg-success/10 text-success";
@@ -261,14 +261,14 @@ export default function QuizPage() {
                     else style = "border-border opacity-50";
                   } else if (isPicked) {
                     style =
-                      "border-violet-500/70 bg-violet-600/15 shadow-[0_0_0_3px_rgba(139,92,246,0.12)]";
+                      "border-accent/70 bg-accent/12 shadow-[0_0_0_3px_rgba(167,139,250,0.12)]";
                   }
                   return (
                     <button
                       key={option}
                       disabled={answered}
                       onClick={() => setPicked(option)}
-                      className={`flex w-full items-center justify-between rounded-xl border px-4.5 py-3.5 text-left text-sm transition-all ${style}`}
+                      className={`flex w-full items-center justify-between rounded-xl border px-4.5 py-3.5 text-left text-sm transition-[border-color,background-color,box-shadow] duration-100 ${style}`}
                     >
                       {option}
                       {answered && isCorrect && <Check className="size-4" />}
@@ -316,11 +316,11 @@ export default function QuizPage() {
                 initial={{ rotate: -12, scale: 0.6 }}
                 animate={{ rotate: 0, scale: 1 }}
                 transition={{ type: "spring", stiffness: 200 }}
-                className="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-amber-500/30 to-violet-600/20 ring-1 ring-amber-500/40"
+                className="grid size-16 place-items-center rounded-xl bg-warning/15 ring-1 ring-warning/30"
               >
-                <Trophy className="size-8 text-amber-300" />
+                <Trophy className="size-8 text-warning" />
               </motion.span>
-              <h2 className="mt-5 text-3xl font-bold">
+              <h2 className="mt-5 text-3xl font-medium">
                 {score}/{items.length}
               </h2>
               <p className="mt-1 text-sm text-muted">

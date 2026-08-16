@@ -39,10 +39,10 @@ function SignInCard() {
         animate={{ opacity: 1, y: 0 }}
         className="glass max-w-md p-10 text-center"
       >
-        <span className="mx-auto mb-4 grid size-14 place-items-center rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-600">
+        <span className="mx-auto mb-4 grid size-14 place-items-center rounded-xl bg-accent-2">
           <FolderLock className="size-7 text-white" />
         </span>
-        <h1 className="text-xl font-bold">Sourcerer Resources</h1>
+        <h1 className="text-xl font-semibold">Sourcerer Resources</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           Browse the academic resource library, request timed access, and read
           everything right here — sign in with your Google account to begin.
@@ -85,7 +85,7 @@ function RequestModal({
   });
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4">
       <motion.div
         initial={{ opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -93,7 +93,7 @@ function RequestModal({
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">Request access</h2>
-          <button onClick={onClose} className="text-muted hover:text-white">
+          <button onClick={onClose} className="text-muted hover:text-text">
             <X className="size-5" />
           </button>
         </div>
@@ -117,7 +117,7 @@ function RequestModal({
                 onClick={() => setDays(preset)}
                 className={`rounded-xl border px-4 py-2 text-sm transition-colors ${
                   days === preset
-                    ? "border-violet-500 bg-violet-600/20 text-white"
+                    ? "border-accent bg-accent/15 text-text"
                     : "border-border text-muted hover:border-border-strong"
                 }`}
               >
@@ -227,7 +227,7 @@ export default function ResourcesPage() {
         className="flex flex-wrap items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Resources</h1>
+          <h1 className="text-2xl font-medium tracking-[-0.02em]">Resources</h1>
           <p className="mt-1 text-sm text-muted">
             Browse the library index. Select items to request timed access —
             unlocked files open right here.
@@ -236,7 +236,7 @@ export default function ResourcesPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/resources/requests"
-            className="glass glass-hover flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-white"
+            className="glass glass-hover flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-text"
           >
             <Clock className="size-4" /> My requests
           </Link>
@@ -252,8 +252,8 @@ export default function ResourcesPage() {
                 onClick={() => setView(key)}
                 className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm transition-colors ${
                   view === key
-                    ? "bg-violet-600/25 text-white"
-                    : "text-muted hover:text-white"
+                    ? "bg-white/[0.07] text-text"
+                    : "text-muted hover:text-text"
                 }`}
               >
                 <Icon className="size-4" /> {label}
@@ -269,7 +269,7 @@ export default function ResourcesPage() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search files and folders…"
-          className="w-full rounded-xl border border-border bg-surface-2/80 py-3 pl-11 pr-4 text-sm placeholder:text-muted/60 focus:border-violet-500/50 focus:outline-none"
+          className="w-full rounded-xl border border-border bg-surface-2/80 py-3 pl-11 pr-4 text-sm placeholder:text-muted/60 focus:border-accent/60 focus:outline-none"
         />
       </div>
 
@@ -291,12 +291,12 @@ export default function ResourcesPage() {
                     checked={selected.has(node.id)}
                     onChange={() => selection.toggle(node)}
                     disabled={unlocked}
-                    className="size-3.5 accent-violet-500 disabled:opacity-30"
+                    className="size-3.5 accent-accent disabled:opacity-30"
                   />
                   {!node.is_folder && unlocked ? (
                     <Link
                       href={`/resources/view/${node.id}`}
-                      className="truncate hover:text-violet-300 hover:underline"
+                      className="truncate hover:text-accent hover:underline"
                     >
                       {node.path}
                     </Link>
@@ -332,7 +332,7 @@ export default function ResourcesPage() {
         >
           <button
             onClick={() => setModalOpen(true)}
-            className="btn-primary flex items-center gap-2.5 rounded-2xl px-6 py-3.5 text-sm font-semibold text-white"
+            className="btn-primary flex items-center gap-2.5 rounded-xl px-6 py-3.5 text-sm font-semibold text-white"
           >
             <ShoppingCart className="size-4.5" />
             Request access to {selected.size} item{selected.size === 1 ? "" : "s"}

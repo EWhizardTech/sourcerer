@@ -42,7 +42,7 @@ function ScoreBar({ score }: { score: number | null }) {
   return (
     <div className="h-1 w-16 overflow-hidden rounded-full bg-white/10">
       <div
-        className="h-full rounded-full bg-gradient-to-r from-violet-500 to-cyan-400"
+        className="h-full rounded-full bg-accent"
         style={{ width: `${pct}%` }}
       />
     </div>
@@ -58,12 +58,12 @@ function SourceCard({ source }: { source: ChatSource }) {
         onClick={() => setOpen(!open)}
         className="flex w-full items-center gap-3 px-3.5 py-2.5 text-left transition hover:bg-white/5"
       >
-        <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-violet-600/20 text-[11px] font-bold text-violet-300 ring-1 ring-violet-500/30">
+        <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent/15 text-[11px] font-semibold text-accent ring-1 ring-accent/25">
           {source.id}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5 truncate text-xs font-medium">
-            <Icon className="size-3 shrink-0 text-cyan-400" />
+            <Icon className="size-3 shrink-0 text-accent" />
             <span className="truncate">{source.source}</span>
           </div>
           <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted">
@@ -94,7 +94,7 @@ function SourceCard({ source }: { source: ChatSource }) {
                 href={source.url}
                 target="_blank"
                 rel="noreferrer"
-                className="block border-t border-white/5 px-3.5 py-2 text-[11px] text-cyan-400 hover:underline"
+                className="block border-t border-white/5 px-3.5 py-2 text-[11px] text-accent hover:underline"
               >
                 {source.url}
               </a>
@@ -223,7 +223,7 @@ export default function ChatPage() {
         </div>
         <button
           onClick={newChat}
-          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-violet-500/50 hover:text-white"
+          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition hover:border-accent/50 hover:text-text"
         >
           <Plus className="size-3.5" /> New chat
         </button>
@@ -237,9 +237,9 @@ export default function ChatPage() {
               <motion.span
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="grid size-16 place-items-center rounded-2xl bg-gradient-to-br from-violet-600/30 to-cyan-600/20 ring-1 ring-violet-500/30"
+                className="grid size-16 place-items-center rounded-xl bg-accent-2/15 ring-1 ring-accent/25"
               >
-                <Sparkles className="size-8 text-violet-300" />
+                <Sparkles className="size-8 text-accent" />
               </motion.span>
               <h2 className="mt-6 text-2xl font-semibold">
                 Ask your <span className="gradient-text">course material</span>
@@ -254,7 +254,7 @@ export default function ChatPage() {
                   <button
                     key={s}
                     onClick={() => send(s)}
-                    className="glass glass-hover px-4 py-3 text-left text-sm text-muted hover:text-white"
+                    className="glass glass-hover px-4 py-3 text-left text-sm text-muted hover:text-text"
                   >
                     {s}
                   </button>
@@ -271,7 +271,7 @@ export default function ChatPage() {
                 animate={{ opacity: 1, y: 0 }}
                 className="flex justify-end"
               >
-                <div className="max-w-[80%] rounded-2xl rounded-br-md bg-gradient-to-br from-violet-600 to-violet-700 px-4.5 py-3 text-sm shadow-lg shadow-violet-950/40">
+                <div className="max-w-[80%] rounded-xl rounded-br-sm bg-accent-2 px-4.5 py-3 text-sm">
                   {msg.content}
                 </div>
               </motion.div>
@@ -290,7 +290,7 @@ export default function ChatPage() {
                   </div>
                 )}
                 <div
-                  className={`glass max-w-full !rounded-2xl !rounded-bl-md px-5 py-4 ${
+                  className={`glass max-w-full !rounded-xl !rounded-bl-sm px-5 py-4 ${
                     msg.error ? "border-danger/40" : ""
                   }`}
                 >
@@ -316,7 +316,7 @@ export default function ChatPage() {
       </div>
 
       {/* Composer */}
-      <div className="border-t border-border bg-surface/40 px-8 py-4 backdrop-blur-xl">
+      <div className="border-t border-border bg-surface px-8 py-4">
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -335,7 +335,7 @@ export default function ChatPage() {
             }}
             rows={1}
             placeholder="Ask anything about your documents…"
-            className="max-h-40 min-h-[48px] flex-1 resize-none rounded-xl border border-border bg-surface-2/80 px-4 py-3 text-sm outline-none transition placeholder:text-muted/60 focus:border-violet-500/60 focus:shadow-[0_0_0_3px_rgba(139,92,246,0.15)]"
+            className="max-h-40 min-h-[48px] flex-1 resize-none rounded-xl border border-border bg-surface-2/80 px-4 py-3 text-sm outline-none transition placeholder:text-muted/60 focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(167,139,250,0.15)]"
           />
           {busy ? (
             <button

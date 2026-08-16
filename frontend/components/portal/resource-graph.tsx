@@ -15,10 +15,12 @@ const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
 });
 
+// File-type hues for the graph — data-viz color carries meaning here, so the
+// map stays multi-hue by design; UI chrome around it remains purple/neutral.
 const EXT_COLORS: Record<string, string> = {
   pdf: "#f87171",
   md: "#a78bfa",
-  txt: "#94a3b8",
+  txt: "#9e9e9e",
   sql: "#fbbf24",
   ppt: "#fb923c",
   pptx: "#fb923c",
@@ -27,7 +29,7 @@ const EXT_COLORS: Record<string, string> = {
   png: "#34d399",
   jpg: "#34d399",
   jpeg: "#34d399",
-  mp4: "#22d3ee",
+  mp4: "#38bdf8",
 };
 
 interface GraphNodeObject {
@@ -89,14 +91,14 @@ export default function ResourceGraph() {
       ctx.arc(node.x!, node.y!, radius, 0, 2 * Math.PI);
       ctx.fillStyle = node.is_folder
         ? node.depth === 0
-          ? "#22d3ee"
-          : "#8b5cf6"
-        : EXT_COLORS[node.ext] ?? "#64748b";
+          ? "#a78bfa"
+          : "#7c3aed"
+        : EXT_COLORS[node.ext] ?? "#737373";
       ctx.fill();
       if (scale > 1.2 || node.is_folder) {
         ctx.font = `${node.is_folder ? 4.5 : 3.5}px sans-serif`;
         ctx.textAlign = "center";
-        ctx.fillStyle = "rgba(236,235,245,0.75)";
+        ctx.fillStyle = "rgba(238,238,238,0.72)";
         ctx.fillText(node.name, node.x!, node.y! + radius + 5);
       }
     },
@@ -112,7 +114,7 @@ export default function ResourceGraph() {
               setRootId(rootStack[rootStack.length - 1]);
               setRootStack((stack) => stack.slice(0, -1));
             }}
-            className="glass flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted hover:text-white"
+            className="glass flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted hover:text-text"
           >
             <ArrowUp className="size-3.5" /> Up a level
           </button>

@@ -71,11 +71,11 @@ export default function MyRequestsPage() {
       <div className="flex items-center gap-3">
         <Link
           href="/resources"
-          className="glass grid size-9 place-items-center text-muted hover:text-white"
+          className="glass grid size-9 place-items-center text-muted hover:text-text"
         >
           <ArrowLeft className="size-4" />
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight">My access</h1>
+        <h1 className="text-2xl font-medium tracking-[-0.02em]">My access</h1>
       </div>
 
       <motion.section

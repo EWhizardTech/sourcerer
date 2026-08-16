@@ -118,7 +118,7 @@ export default function ViewerPage({
       <div className="mb-5 flex items-center gap-3">
         <Link
           href="/resources"
-          className="glass grid size-9 shrink-0 place-items-center text-muted transition-colors hover:text-white"
+          className="glass grid size-9 shrink-0 place-items-center text-muted transition-colors hover:text-text"
         >
           <ArrowLeft className="size-4" />
         </Link>

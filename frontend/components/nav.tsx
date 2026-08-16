@@ -36,17 +36,17 @@ export default function Nav() {
     : publicItems;
 
   return (
-    <aside className="fixed left-0 top-0 z-20 flex h-screen w-60 flex-col border-r border-border bg-surface/60 backdrop-blur-xl">
-      <Link href="/" className="flex items-center gap-2.5 px-6 py-6">
-        <span className="grid size-9 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-cyan-600 shadow-lg shadow-violet-900/40">
-          <Sparkles className="size-5 text-white" />
+    <aside className="fixed left-0 top-0 z-20 flex h-screen w-60 flex-col border-r border-border bg-surface">
+      <Link href="/" className="flex items-center gap-2.5 px-5 py-5">
+        <span className="grid size-8 place-items-center rounded-md bg-accent-2">
+          <Sparkles className="size-4.5 text-white" />
         </span>
-        <span className="text-lg font-bold tracking-tight gradient-text">
+        <span className="text-[17px] font-semibold tracking-tight text-text">
           Sourcerer
         </span>
       </Link>
 
-      <nav className="mt-2 flex flex-col gap-1 px-3">
+      <nav className="mt-1 flex flex-col gap-0.5 px-3">
         {navItems.map(({ href, label, icon: Icon }) => {
           const active =
             href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -54,29 +54,29 @@ export default function Nav() {
             <Link
               key={href}
               href={href}
-              className={`group flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-all ${
+              className={`group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-100 ${
                 active
-                  ? "bg-gradient-to-r from-violet-600/25 to-cyan-600/10 text-white shadow-inner"
-                  : "text-muted hover:bg-white/5 hover:text-white"
+                  ? "bg-white/[0.07] text-text"
+                  : "text-muted hover:bg-white/[0.04] hover:text-text"
               }`}
             >
+              {active && (
+                <span className="absolute -left-3 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-full bg-accent" />
+              )}
               <Icon
-                className={`size-4.5 transition-colors ${
-                  active ? "text-violet-400" : "text-muted group-hover:text-violet-300"
+                className={`size-4.5 transition-colors duration-100 ${
+                  active ? "text-accent" : "text-faint group-hover:text-muted"
                 }`}
               />
               {label}
-              {active && (
-                <span className="ml-auto size-1.5 rounded-full bg-gradient-to-r from-violet-400 to-cyan-400" />
-              )}
             </Link>
           );
         })}
       </nav>
 
-      <div className="mt-auto px-3 py-4">
+      <div className="mt-auto border-t border-border px-3 py-3">
         {me ? (
-          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5">
+          <div className="flex items-center gap-2.5 rounded-md px-2 py-1.5">
             {me.picture ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -86,7 +86,7 @@ export default function Nav() {
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-violet-600/40 text-xs font-semibold">
+              <span className="grid size-7 shrink-0 place-items-center rounded-full bg-accent-2 text-xs font-semibold text-white">
                 {me.email[0].toUpperCase()}
               </span>
             )}
@@ -96,16 +96,14 @@ export default function Nav() {
             <button
               onClick={() => logout()}
               title="Sign out"
-              className="text-muted transition-colors hover:text-danger"
+              className="rounded-sm p-1 text-faint transition-colors duration-100 hover:text-danger"
             >
               <LogOut className="size-4" />
             </button>
           </div>
         ) : (
-          <div className="px-3 text-[11px] leading-relaxed text-muted/70">
-            AI-powered RAG platform
-            <br />
-            for educational content
+          <div className="px-2 text-[11px] leading-relaxed text-faint">
+            Your academic resource library
           </div>
         )}
       </div>

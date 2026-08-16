@@ -75,14 +75,14 @@ function TreeRow({
     <div>
       <div
         className={`group flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors hover:bg-white/5 ${
-          checked ? "bg-violet-600/10" : ""
+          checked ? "bg-accent/10" : ""
         }`}
         style={{ paddingLeft: `${depth * 1.25 + 0.5}rem` }}
       >
         {node.is_folder ? (
           <button
             onClick={() => setOpen((v) => !v)}
-            className="grid size-5 shrink-0 place-items-center rounded text-muted hover:text-white"
+            className="grid size-5 shrink-0 place-items-center rounded text-muted hover:text-text"
             aria-label={open ? "Collapse" : "Expand"}
           >
             <ChevronRight
@@ -99,19 +99,19 @@ function TreeRow({
           onChange={() => selection.toggle(node)}
           disabled={unlocked}
           title={unlocked ? "Already accessible" : "Add to access request"}
-          className="size-3.5 shrink-0 accent-violet-500 disabled:opacity-30"
+          className="size-3.5 shrink-0 accent-accent disabled:opacity-30"
         />
 
         <Icon
           className={`size-4 shrink-0 ${
-            node.is_folder ? "text-violet-400" : "text-muted"
+            node.is_folder ? "text-accent" : "text-muted"
           }`}
         />
 
         {!node.is_folder && unlocked ? (
           <Link
             href={`/resources/view/${node.id}`}
-            className="truncate text-text hover:text-violet-300 hover:underline"
+            className="truncate text-text hover:text-accent hover:underline"
           >
             {node.name}
           </Link>

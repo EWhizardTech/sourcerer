@@ -5,6 +5,7 @@ import { ArrowLeft, FileQuestion, Loader2, Lock } from "lucide-react";
 import Link from "next/link";
 import { use } from "react";
 import ProtectedContent from "@/components/portal/protected-content";
+import ShareMenu from "@/components/portal/share-menu";
 import { formatSize } from "@/lib/format";
 import { useMe } from "@/components/portal/use-me";
 import {
@@ -128,6 +129,11 @@ export default function ViewerPage({
             {meta.size != null && ` · ${formatSize(meta.size)}`}
           </p>
         </div>
+        <ShareMenu
+          url={`${typeof window !== "undefined" ? window.location.origin : ""}/resources/view/${fileId}`}
+          title={meta.name}
+          className="ml-auto"
+        />
       </div>
 
       <ProtectedContent email={me.email}>{body}</ProtectedContent>

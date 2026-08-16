@@ -48,10 +48,9 @@ export function PdfCanvasViewer({
     (async () => {
       try {
         const pdfjs = await import("pdfjs-dist");
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-          "pdfjs-dist/build/pdf.worker.min.mjs",
-          import.meta.url
-        ).toString();
+        // Served from /public: bundler-independent (the new URL(...) worker
+        // trick breaks under the Next dev bundler with ".U is not a constructor").
+        pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
         const resp = await fetchContent(url);
         const data = await resp.arrayBuffer();

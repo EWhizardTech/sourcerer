@@ -40,7 +40,7 @@ services:
       INGESTION_URL: http://ingestion:8000
       RETRIEVAL_URL: http://retrieval:8000
       QUIZ_URL: http://quiz:8000
-      CORS_ORIGINS: http://localhost:3000
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
     depends_on:
       - ingestion
       - retrieval

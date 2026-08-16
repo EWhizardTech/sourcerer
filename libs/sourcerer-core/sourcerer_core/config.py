@@ -67,6 +67,36 @@ class Settings(BaseSettings):
     SPACY_MODEL_DIR: str = ".cache/spacy"
     SPACY_MODEL_NAME: str = "en_core_web_sm"
 
+    # --- Resource portal (services/portal) ---
+    # Async SQLAlchemy URL for the portal's Postgres database.
+    DATABASE_URL: str = (
+        "postgresql+asyncpg://sourcerer:sourcerer@localhost:5433/sourcerer_portal"
+    )
+    # Google OAuth web client (sign-in with Google for the portal UI).
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    # Must match an authorized redirect URI on the OAuth client — the gateway URL.
+    GOOGLE_CALLBACK_URL: str = "http://localhost:8001/api/v1/portal/auth/callback"
+    # HS256 key for portal session JWTs. Override in production.
+    PORTAL_SESSION_SECRET: str = "dev-insecure-change-me"
+    PORTAL_SESSION_TTL_SECONDS: int = 60 * 60 * 24 * 7  # 7 days
+    # Comma-separated emails treated as portal admins (evaluated per request).
+    ADMIN_EMAILS: str = ""
+    # Drive folder the portal catalogs (metadata only — never file contents).
+    PORTAL_ROOT_FOLDER_ID: str = "1f8E8ZIZO0Rhfwi6VO3OJlGBIMLDDaemL"
+    # Where the browser is sent after OAuth completes.
+    PORTAL_FRONTEND_ORIGIN: str = "http://localhost:3001"
+    # Origins allowed to send state-changing portal requests (CSRF guard).
+    PORTAL_ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001"
+    PORTAL_COOKIE_SECURE: bool = False  # true behind HTTPS in production
+    PORTAL_COOKIE_SAMESITE: str = "lax"  # "none" for cross-domain deployments
+    # Disk cache for office/gdoc -> PDF conversions.
+    PORTAL_CACHE_DIR: str = ".cache/portal"
+    PORTAL_SYNC_INTERVAL_MINUTES: int = 360
+    # Comma-separated name globs skipped during catalog sync (junk dirs/files).
+    PORTAL_SYNC_EXCLUDE: str = "__pycache__,node_modules,venv,.venv,*.pyc"
+    PORTAL_CONVERT_TIMEOUT_SECONDS: int = 120
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

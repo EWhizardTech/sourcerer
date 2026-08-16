@@ -5,6 +5,7 @@ Single public entry point for all backend services:
     /api/v1/ingest/*            -> ingestion service
     /api/v1/retrieve*, /chat*   -> retrieval service
     /api/v1/quiz/*              -> quiz service
+    /api/v1/portal/*            -> portal service (resource portal)
     /health                     -> aggregate health of all services
 
 Plain reverse proxy over httpx with full streaming passthrough (SSE-safe):
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 INGESTION_URL = os.getenv("INGESTION_URL", "http://localhost:8010")
 RETRIEVAL_URL = os.getenv("RETRIEVAL_URL", "http://localhost:8011")
 QUIZ_URL = os.getenv("QUIZ_URL", "http://localhost:8012")
+PORTAL_URL = os.getenv("PORTAL_URL", "http://localhost:8013")
 CORS_ORIGINS = [
     origin.strip()
     for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
@@ -41,6 +43,7 @@ SERVICES = {
     "ingestion": INGESTION_URL,
     "retrieval": RETRIEVAL_URL,
     "quiz": QUIZ_URL,
+    "portal": PORTAL_URL,
 }
 
 # Longest-prefix-first route table.
@@ -49,6 +52,7 @@ ROUTE_TABLE: list[tuple[str, str]] = [
     ("/api/v1/retrieve", RETRIEVAL_URL),
     ("/api/v1/chat", RETRIEVAL_URL),
     ("/api/v1/quiz", QUIZ_URL),
+    ("/api/v1/portal", PORTAL_URL),
 ]
 
 # Hop-by-hop headers must not be forwarded.
@@ -147,6 +151,10 @@ async def proxy(request: Request, path: str):
         for k, v in upstream_response.headers.items()
         if k.lower() not in HOP_BY_HOP
     }
+    # aiter_raw() forwards bytes verbatim, so the upstream Content-Length stays
+    # valid — keep it (video 206 responses need it for reliable seeking).
+    if "content-length" in upstream_response.headers:
+        response_headers["content-length"] = upstream_response.headers["content-length"]
 
     return StreamingResponse(
         upstream_response.aiter_raw(),

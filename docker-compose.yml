@@ -40,6 +40,7 @@ services:
       INGESTION_URL: http://ingestion:8000
       RETRIEVAL_URL: http://retrieval:8000
       QUIZ_URL: http://quiz:8000
+      PORTAL_URL: http://portal:8000
       # :3000 is the containerized frontend; :3001 is `next dev` run on the
       # host, which auto-increments while the container holds :3000.
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001}
@@ -47,6 +48,7 @@ services:
       - ingestion
       - retrieval
       - quiz
+      - portal
 
   ingestion:
     build:
@@ -105,7 +107,45 @@ services:
     volumes:
       - ./.cache:/srv/.cache
 
+  portal:
+    build:
+      context: .
+      dockerfile: services/portal/Dockerfile
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      GDRIVE_SERVICE_ACCOUNT_PATH: /srv/secrets/acc.json
+      DATABASE_URL: postgresql+asyncpg://sourcerer:${POSTGRES_PASSWORD:-sourcerer}@postgres:5432/sourcerer_portal
+      PORTAL_CACHE_DIR: /srv/portal-cache
+    volumes:
+      - ./secrets:/srv/secrets:ro
+      - portal-cache:/srv/portal-cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sourcerer
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sourcerer}
+      POSTGRES_DB: sourcerer_portal
+    ports:
+      # 5433 host-side (5432 may be taken by a local Postgres), like redis 6380.
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sourcerer"]
+      interval: 5s
+      retries: 10
+
   redis:
     image: redis:latest
     ports:
       - "6380:6379"
+
+volumes:
+  pgdata:
+  portal-cache:

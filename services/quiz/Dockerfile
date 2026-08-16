@@ -13,6 +13,7 @@ COPY services/gateway/pyproject.toml services/gateway/
 COPY services/ingestion/pyproject.toml services/ingestion/
 COPY services/retrieval/pyproject.toml services/retrieval/
 COPY services/quiz/pyproject.toml services/quiz/
+COPY services/portal/pyproject.toml services/portal/
 
 # Third-party deps first (cached), then workspace members.
 RUN --mount=type=cache,target=/root/.cache/uv \

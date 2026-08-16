@@ -40,5 +40,7 @@ nav:
       - Quiz: services/quiz.md
       - Portal: services/portal.md
   - Frontend: frontend.md
+  - Security: security.md
   - Deployment: deployment.md
+  - Environments & Git flow: environments.md
   - Development: development.md

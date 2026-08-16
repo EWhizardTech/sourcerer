@@ -37,6 +37,9 @@ the portal's read-only service account.
   `/content/{id}/pdf` serves office files (LibreOffice headless) and
   Google Docs/Slides/Sheets (Drive export) as PDFs from a
   content-addressed disk cache keyed by `md5Checksum`/`modifiedTime`.
+  Access is re-checked live on every hit (revoke/expiry are immediate), and
+  each byte-serving request must be an **in-app request carrying a valid,
+  short-lived signed ticket** — see [Security](../security.md).
 
 ## Endpoints (all under `/api/v1/portal`)
 
@@ -45,8 +48,8 @@ the portal's read-only service account.
 | auth | `GET /auth/login`, `GET /auth/callback`, `GET /auth/me`, `POST /auth/logout`, `GET /auth/verify-admin` |
 | catalog | `GET /catalog/children`, `GET /catalog/search`, `GET /catalog/graph` |
 | requests | `POST /requests`, `GET /requests/mine`, `POST /requests/{id}/cancel`, `GET /grants/mine` |
-| content | `GET /content/{id}/meta`, `GET /content/{id}/raw`, `GET /content/{id}/pdf` |
-| admin | `GET/POST /admin/requests*`, `GET/PATCH/POST /admin/grants*`, `POST /admin/sync`, `GET /admin/sync/status`, `GET /admin/users`, `GET /admin/audit` |
+| content | `GET /content/{id}/meta` (mints a ticket), `GET /content/{id}/raw`, `GET /content/{id}/pdf` |
+| admin | `GET/POST /admin/requests*`, `GET/PATCH/POST /admin/grants*`, `POST /admin/users/{id}/revoke-sessions`, `POST /admin/sync`, `GET /admin/sync/status`, `GET /admin/users`, `GET /admin/audit` |
 
 ## Storage
 
@@ -67,9 +70,19 @@ OAuth client's authorized redirect URI **must** be the gateway URL, e.g.
 `PORTAL_SESSION_SECRET`, `ADMIN_EMAILS`, `PORTAL_ROOT_FOLDER_ID`,
 `PORTAL_FRONTEND_ORIGIN`, `PORTAL_ALLOWED_ORIGINS`, cookie flags, cache dir,
 sync interval/excludes, conversion timeout, `POSTGRES_PASSWORD`,
-`DATABASE_URL`.
+`DATABASE_URL`, session TTL (`PORTAL_SESSION_TTL_SECONDS`, default 24 h), and
+content-ticket lifetimes (`PORTAL_CONTENT_TICKET_TTL_SECONDS` = 5 min,
+`PORTAL_CONTENT_STREAM_TTL_SECONDS` = 6 h).
+
+In production (`PORTAL_COOKIE_SECURE=true`) the service **fails closed** at
+startup unless `PORTAL_SESSION_SECRET` is strong (≥32 chars, non-default),
+`PORTAL_ROOT_FOLDER_ID` is set, and `ADMIN_EMAILS` lists at least one admin.
 
 ## Frontend protection layer
+
+This is the client-side **deterrence** tier; the enforceable controls (in-app
+request guard, signed tickets, session revocation) live server-side and are
+described in [Security](../security.md).
 
 The UI wraps all viewers in `ProtectedContent` (deterrence, not DRM — OS
 screenshots cannot be blocked by a browser): tiled per-viewer email

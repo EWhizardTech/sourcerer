@@ -6,6 +6,14 @@
 - **Quiz generation** — multiple-choice questions built from retrieved content
 - **A modern web UI** (Next.js) over a microservice backend behind a single API gateway
 
+!!! info "Current beta: the Resource Portal"
+    The shipped **v0.1.0 beta** is the [Resource Portal](services/portal.md) —
+    Sourcerer as the gated front door to a Google Drive library (Google
+    sign-in, timed access requests, admin approval, in-app-only viewing). It
+    performs **no content ingestion**. The RAG services (chat/quiz/ingestion)
+    exist in the repo but are disabled in the beta deployment. See
+    [Security](security.md) and [Environments](environments.md).
+
 ## At a glance
 
 | Layer | Technology |
@@ -42,8 +50,10 @@ sourcerer/
 │   ├── gateway/           # API gateway (reverse proxy + aggregate health)
 │   ├── ingestion/         # Drive intake + processing pipeline + Celery worker
 │   ├── retrieval/         # Agentic RAG chat service
-│   └── quiz/              # MCQ generation service
+│   ├── quiz/              # MCQ generation service
+│   └── portal/            # Resource portal: auth, catalog, grants, content
 ├── libs/sourcerer-core/   # Shared: config, embedding, vector store, retrieval
+├── deploy/                # Beta deployment (Caddy + compose + runbook)
 ├── docs/                  # This documentation (MkDocs)
 └── docker-compose.yml
 ```

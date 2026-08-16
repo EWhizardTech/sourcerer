@@ -9,6 +9,7 @@ import {
   BrainCircuit,
   FolderInput,
   FolderLock,
+  LibraryBig,
   Home,
   LogIn,
   LogOut,
@@ -27,7 +28,8 @@ interface NavItem {
 // upcoming features visible but marked. RAG features ship after the beta.
 const adminItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/resources", label: "Resources", icon: FolderLock },
+  { href: "/resources", label: "Library", icon: LibraryBig },
+  { href: "/accessible", label: "Accessible", icon: FolderLock },
   { href: "/chat", label: "Chat", icon: MessagesSquare },
   { href: "/quiz", label: "Quiz", icon: BrainCircuit },
   { href: "/ingestion", label: "Ingestion", icon: FolderInput },
@@ -36,7 +38,8 @@ const adminItems: NavItem[] = [
 
 const userItems: NavItem[] = [
   { href: "/home", label: "Home", icon: Home },
-  { href: "/resources", label: "Resources", icon: FolderLock },
+  { href: "/resources", label: "Library", icon: LibraryBig },
+  { href: "/accessible", label: "Accessible", icon: FolderLock },
   { href: "/chat", label: "Chat", icon: MessagesSquare, soon: true },
   { href: "/quiz", label: "Quiz", icon: BrainCircuit, soon: true },
 ];

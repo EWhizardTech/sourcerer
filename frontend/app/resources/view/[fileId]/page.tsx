@@ -5,7 +5,7 @@ import { ArrowLeft, FileQuestion, Loader2, Lock } from "lucide-react";
 import Link from "next/link";
 import { use } from "react";
 import ProtectedContent from "@/components/portal/protected-content";
-import { formatSize } from "@/components/portal/folder-tree";
+import { formatSize } from "@/lib/format";
 import { useMe } from "@/components/portal/use-me";
 import {
   ImageViewer,

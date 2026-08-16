@@ -6,8 +6,6 @@ import {
   Clock,
   FolderLock,
   Loader2,
-  Network,
-  ListTree,
   Search,
   Send,
   ShoppingCart,
@@ -15,12 +13,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import FolderTree, {
-  TreeSelection,
-  isUnlocked,
-} from "@/components/portal/folder-tree";
-import ResourceGraph from "@/components/portal/resource-graph";
+import FileBrowser, {
+  Selection,
+  ViewMode,
+  ViewSwitcher,
+} from "@/components/portal/file-browser";
 import { useMe } from "@/components/portal/use-me";
+import { isUnlocked } from "@/lib/format";
 import {
   CatalogNode,
   createAccessRequest,
@@ -41,7 +40,7 @@ function SignInCard() {
         <span className="mx-auto mb-4 grid size-14 place-items-center rounded-xl bg-accent-2">
           <FolderLock className="size-7 text-white" />
         </span>
-        <h1 className="text-xl font-semibold">Sourcerer Resources</h1>
+        <h1 className="text-xl font-semibold">The Sourcerer library</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           Browse the academic resource library, request timed access, and read
           everything right here — sign in with your Google account to begin.
@@ -61,7 +60,7 @@ function RequestModal({
   selection,
   onClose,
 }: {
-  selection: TreeSelection;
+  selection: Selection;
   onClose: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -79,6 +78,7 @@ function RequestModal({
     onSuccess: () => {
       nodes.forEach((n) => selection.toggle(n));
       queryClient.invalidateQueries({ queryKey: ["my-requests"] });
+      queryClient.invalidateQueries({ queryKey: ["me-overview"] });
       onClose();
     },
   });
@@ -114,7 +114,7 @@ function RequestModal({
               <button
                 key={preset}
                 onClick={() => setDays(preset)}
-                className={`rounded-xl border px-4 py-2 text-sm transition-colors ${
+                className={`rounded-md border px-4 py-2 text-sm transition-colors duration-100 ${
                   days === preset
                     ? "border-accent bg-accent/15 text-text"
                     : "border-border text-muted hover:border-border-strong"
@@ -129,7 +129,7 @@ function RequestModal({
               max={365}
               value={days}
               onChange={(event) => setDays(Number(event.target.value))}
-              className="w-24 rounded-xl border border-border bg-surface-2/80 px-3 py-2 text-sm"
+              className="w-24 rounded-md border border-border bg-surface-2/80 px-3 py-2 text-sm"
             />
           </div>
         </div>
@@ -143,7 +143,7 @@ function RequestModal({
             onChange={(event) => setMessage(event.target.value)}
             rows={3}
             placeholder="Why do you need these materials?"
-            className="mt-2 w-full rounded-xl border border-border bg-surface-2/80 px-4 py-3 text-sm placeholder:text-muted/60"
+            className="mt-2 w-full rounded-md border border-border bg-surface-2/80 px-4 py-3 text-sm placeholder:text-muted/60"
           />
         </div>
 
@@ -156,7 +156,7 @@ function RequestModal({
         <button
           onClick={() => mutation.mutate()}
           disabled={mutation.isPending || nodes.length === 0 || days < 1}
-          className="btn-primary mt-5 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white"
+          className="btn-primary mt-5 flex w-full items-center justify-center gap-2 rounded-md py-3 text-sm font-semibold text-white"
         >
           {mutation.isPending ? (
             <Loader2 className="size-4 animate-spin" />
@@ -170,14 +170,14 @@ function RequestModal({
   );
 }
 
-export default function ResourcesPage() {
+export default function LibraryPage() {
   const { data: me, isLoading: meLoading } = useMe();
-  const [view, setView] = useState<"tree" | "graph">("tree");
+  const [view, setView] = useState<ViewMode>("grid");
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Map<string, CatalogNode>>(new Map());
   const [modalOpen, setModalOpen] = useState(false);
 
-  const selection: TreeSelection = useMemo(
+  const selection: Selection = useMemo(
     () => ({
       selected,
       toggle: (node) =>
@@ -223,105 +223,86 @@ export default function ResourcesPage() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25 }}
         className="flex flex-wrap items-center justify-between gap-4"
       >
         <div>
-          <h1 className="text-2xl font-medium tracking-[-0.02em]">Resources</h1>
+          <h1 className="text-2xl font-medium tracking-[-0.02em]">Library</h1>
           <p className="mt-1 text-sm text-muted">
-            Browse the library index. Select items to request timed access —
-            unlocked files open right here.
+            Everything in the archive. Tick locked items to request timed
+            access — unlocked ones open right here.
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Link
             href="/resources/requests"
-            className="glass glass-hover flex items-center gap-2 px-4 py-2.5 text-sm text-muted hover:text-text"
+            className="glass glass-hover flex items-center gap-2 px-4 py-2 text-sm text-muted hover:text-text"
           >
             <Clock className="size-4" /> My requests
           </Link>
-          <div className="glass flex p-1">
-            {(
-              [
-                ["tree", ListTree, "Tree"],
-                ["graph", Network, "Graph"],
-              ] as const
-            ).map(([key, Icon, label]) => (
-              <button
-                key={key}
-                onClick={() => setView(key)}
-                className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm transition-colors ${
-                  view === key
-                    ? "bg-white/[0.07] text-text"
-                    : "text-muted hover:text-text"
-                }`}
-              >
-                <Icon className="size-4" /> {label}
-              </button>
-            ))}
-          </div>
+          <ViewSwitcher view={view} onChange={setView} />
         </div>
       </motion.div>
 
       <div className="relative mt-6">
-        <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted" />
+        <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-faint" />
         <input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search files and folders…"
-          className="w-full rounded-xl border border-border bg-surface-2/80 py-3 pl-11 pr-4 text-sm placeholder:text-muted/60 focus:border-accent/60 focus:outline-none"
+          className="w-full rounded-md border border-border bg-surface-2/80 py-2.5 pl-11 pr-4 text-sm placeholder:text-faint focus:border-accent/60 focus:outline-none"
         />
       </div>
 
-      {query.trim().length >= 2 ? (
-        <div className="glass mt-4 p-3">
-          {searching ? (
-            <div className="p-4 text-sm text-muted">Searching…</div>
-          ) : searchData?.results.length ? (
-            searchData.results.map((node) => {
-              const unlocked =
-                me.is_admin || isUnlocked(node.path_ids, grantedPathIds);
-              return (
-                <div
-                  key={node.id}
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-white/5"
-                >
-                  <input
-                    type="checkbox"
-                    checked={selected.has(node.id)}
-                    onChange={() => selection.toggle(node)}
-                    disabled={unlocked}
-                    className="size-3.5 accent-accent disabled:opacity-30"
-                  />
-                  {!node.is_folder && unlocked ? (
-                    <Link
-                      href={`/resources/view/${node.id}`}
-                      className="truncate hover:text-accent hover:underline"
-                    >
-                      {node.path}
-                    </Link>
-                  ) : (
-                    <span className="truncate text-muted">{node.path}</span>
-                  )}
-                </div>
-              );
-            })
-          ) : (
-            <div className="p-4 text-sm text-muted">No matches.</div>
-          )}
-        </div>
-      ) : (
-        <div className="mt-4">
-          {view === "tree" ? (
-            <FolderTree
-              selection={selection}
-              grantedPathIds={grantedPathIds}
-              isAdmin={me.is_admin}
-            />
-          ) : (
-            <ResourceGraph rootId="root" />
-          )}
-        </div>
-      )}
+      <div className="mt-5">
+        {query.trim().length >= 2 ? (
+          <div className="glass divide-y divide-border/60">
+            {searching ? (
+              <div className="p-4 text-sm text-muted">Searching…</div>
+            ) : searchData?.results.length ? (
+              searchData.results.map((node) => {
+                const unlocked =
+                  me.is_admin || isUnlocked(node.path_ids, grantedPathIds);
+                return (
+                  <div
+                    key={node.id}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm"
+                  >
+                    {!unlocked && (
+                      <input
+                        type="checkbox"
+                        checked={selected.has(node.id)}
+                        onChange={() => selection.toggle(node)}
+                        className="size-3.5 accent-accent"
+                      />
+                    )}
+                    {!node.is_folder && unlocked ? (
+                      <Link
+                        href={`/resources/view/${node.id}`}
+                        className="truncate hover:text-accent hover:underline"
+                      >
+                        {node.path}
+                      </Link>
+                    ) : (
+                      <span className="truncate text-muted">{node.path}</span>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="p-4 text-sm text-muted">No matches.</div>
+            )}
+          </div>
+        ) : (
+          <FileBrowser
+            rootLabel="Library"
+            selection={selection}
+            grantedPathIds={grantedPathIds}
+            isAdmin={me.is_admin}
+            view={view}
+          />
+        )}
+      </div>
 
       {selected.size > 0 && (
         <motion.div

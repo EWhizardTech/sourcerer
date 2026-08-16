@@ -1,7 +1,9 @@
 # Build context: repo root
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_LINK_MODE=copy
+# --- builder: resolve and install the venv with uv ---
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim AS builder
+
+ENV UV_LINK_MODE=copy
 WORKDIR /srv
 
 # Workspace manifests only — cached until a lockfile/pyproject changes.
@@ -12,11 +14,17 @@ COPY services/ingestion/pyproject.toml services/ingestion/
 COPY services/retrieval/pyproject.toml services/retrieval/
 COPY services/quiz/pyproject.toml services/quiz/
 
+# Gateway only needs third-party deps; it is run straight from source.
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --package sourcerer-gateway --no-install-workspace
 
-COPY services/gateway/ services/gateway/
+# --- runtime: same Python base as the builder, without uv or build layers ---
+FROM python:3.13-slim-bookworm
 
-ENV PATH="/srv/.venv/bin:$PATH"
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH="/srv/.venv/bin:$PATH"
+
+COPY --from=builder /srv/.venv /srv/.venv
+COPY services/gateway/ /srv/services/gateway/
+
 WORKDIR /srv/services/gateway
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

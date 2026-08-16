@@ -8,9 +8,11 @@ __pycache__/
 .env
 .git
 .gitignore
-.venv/
-.cache/
-.pytest_cache/
+**/.venv/
+# Model/asset caches from local dev runs live both at the root and inside
+# services (e.g. services/quiz/.cache is ~1.8 GB) — keep them all out.
+**/.cache/
+**/.pytest_cache/
 data/
 secrets/
 docs/

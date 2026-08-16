@@ -52,6 +52,7 @@ services:
     build:
       context: .
       dockerfile: services/ingestion/Dockerfile
+    image: sourcerer-ingestion
     restart: unless-stopped
     env_file: [.env]
     environment:
@@ -65,9 +66,8 @@ services:
       - redis
 
   ingestion-worker:
-    build:
-      context: .
-      dockerfile: services/ingestion/Dockerfile
+    # Reuses the image built by the ingestion service — no second build.
+    image: sourcerer-ingestion
     restart: unless-stopped
     command: celery -A app.workers.celery_app.celery worker --loglevel=info
     env_file: [.env]

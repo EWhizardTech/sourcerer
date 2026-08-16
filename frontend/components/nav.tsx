@@ -14,21 +14,26 @@ import {
 } from "lucide-react";
 import { useLogout, useMe } from "@/components/portal/use-me";
 
-const items = [
+// Beta: the portal is the public surface; RAG features stay admin-only.
+const adminItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/chat", label: "Chat", icon: MessagesSquare },
   { href: "/quiz", label: "Quiz", icon: BrainCircuit },
   { href: "/ingestion", label: "Ingestion", icon: FolderInput },
-  { href: "/resources", label: "Resources", icon: FolderLock },
 ];
+const publicItems = [{ href: "/resources", label: "Resources", icon: FolderLock }];
 
 export default function Nav() {
   const pathname = usePathname();
   const { data: me } = useMe();
   const logout = useLogout();
   const navItems = me?.is_admin
-    ? [...items, { href: "/admin", label: "Admin", icon: ShieldCheck }]
-    : items;
+    ? [
+        ...adminItems,
+        ...publicItems,
+        { href: "/admin", label: "Admin", icon: ShieldCheck },
+      ]
+    : publicItems;
 
   return (
     <aside className="fixed left-0 top-0 z-20 flex h-screen w-60 flex-col border-r border-border bg-surface/60 backdrop-blur-xl">

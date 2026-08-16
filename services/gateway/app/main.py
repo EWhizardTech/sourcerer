@@ -29,6 +29,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Set an upstream to an empty string to disable its routes entirely
+# (e.g. the portal-only beta deployment runs without the RAG services).
 INGESTION_URL = os.getenv("INGESTION_URL", "http://localhost:8010")
 RETRIEVAL_URL = os.getenv("RETRIEVAL_URL", "http://localhost:8011")
 QUIZ_URL = os.getenv("QUIZ_URL", "http://localhost:8012")
@@ -40,19 +42,27 @@ CORS_ORIGINS = [
 ]
 
 SERVICES = {
-    "ingestion": INGESTION_URL,
-    "retrieval": RETRIEVAL_URL,
-    "quiz": QUIZ_URL,
-    "portal": PORTAL_URL,
+    name: url
+    for name, url in {
+        "ingestion": INGESTION_URL,
+        "retrieval": RETRIEVAL_URL,
+        "quiz": QUIZ_URL,
+        "portal": PORTAL_URL,
+    }.items()
+    if url
 }
 
 # Longest-prefix-first route table.
 ROUTE_TABLE: list[tuple[str, str]] = [
-    ("/api/v1/ingest", INGESTION_URL),
-    ("/api/v1/retrieve", RETRIEVAL_URL),
-    ("/api/v1/chat", RETRIEVAL_URL),
-    ("/api/v1/quiz", QUIZ_URL),
-    ("/api/v1/portal", PORTAL_URL),
+    (prefix, url)
+    for prefix, url in [
+        ("/api/v1/ingest", INGESTION_URL),
+        ("/api/v1/retrieve", RETRIEVAL_URL),
+        ("/api/v1/chat", RETRIEVAL_URL),
+        ("/api/v1/quiz", QUIZ_URL),
+        ("/api/v1/portal", PORTAL_URL),
+    ]
+    if url
 ]
 
 # Hop-by-hop headers must not be forwarded.

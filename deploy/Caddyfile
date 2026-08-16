@@ -1,0 +1,21 @@
+# One origin for the whole app. Caddy provisions Let's Encrypt automatically
+# for SITE_ADDRESS (must be a real DNS name pointing at this VM).
+
+{$SITE_ADDRESS} {
+	encode zstd gzip
+
+	handle /api/* {
+		# flush_interval -1: no response buffering (video streaming, SSE later)
+		reverse_proxy gateway:8000 {
+			flush_interval -1
+		}
+	}
+
+	handle /health {
+		reverse_proxy gateway:8000
+	}
+
+	handle {
+		reverse_proxy frontend:3000
+	}
+}

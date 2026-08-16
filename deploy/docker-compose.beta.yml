@@ -1,0 +1,96 @@
+# Portal-only beta deployment: caddy (auto-HTTPS) -> frontend + gateway -> portal -> postgres.
+# No RAG services (chat/quiz/ingestion upstreams disabled).
+#
+#   cd deploy
+#   cp .env.beta.example .env   # fill in values
+#   docker compose -f docker-compose.beta.yml up -d --build
+#
+# Everything is served from ONE origin (https://$SITE_ADDRESS): Caddy routes
+# /api/* and /health to the gateway and everything else to the frontend, so
+# cookies stay first-party (SameSite=Lax; Secure) and no CORS is involved.
+
+name: sourcerer-beta
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?set SITE_ADDRESS in deploy/.env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - frontend
+      - gateway
+
+  frontend:
+    build:
+      context: ../frontend
+      args:
+        # Empty -> the client uses relative /api/... URLs (same-origin via Caddy).
+        NEXT_PUBLIC_API_URL: ""
+    restart: unless-stopped
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: services/gateway/Dockerfile
+    restart: unless-stopped
+    environment:
+      # Portal-only beta: empty string disables a route in the gateway.
+      INGESTION_URL: ""
+      RETRIEVAL_URL: ""
+      QUIZ_URL: ""
+      PORTAL_URL: http://portal:8000
+      CORS_ORIGINS: https://${SITE_ADDRESS}
+    depends_on:
+      - portal
+
+  portal:
+    build:
+      context: ..
+      dockerfile: services/portal/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false # interpolation below still enforces the critical vars
+    environment:
+      GDRIVE_SERVICE_ACCOUNT_PATH: /srv/secrets/acc.json
+      DATABASE_URL: postgresql+asyncpg://sourcerer:${POSTGRES_PASSWORD}@postgres:5432/sourcerer_portal
+      PORTAL_CACHE_DIR: /srv/portal-cache
+      PORTAL_FRONTEND_ORIGIN: https://${SITE_ADDRESS}
+      PORTAL_ALLOWED_ORIGINS: https://${SITE_ADDRESS}
+      GOOGLE_CALLBACK_URL: https://${SITE_ADDRESS}/api/v1/portal/auth/callback
+      PORTAL_COOKIE_SECURE: "true"
+      PORTAL_COOKIE_SAMESITE: lax
+    volumes:
+      - ../secrets:/srv/secrets:ro
+      - portal-cache:/srv/portal-cache
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sourcerer
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}
+      POSTGRES_DB: sourcerer_portal
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sourcerer"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  pgdata:
+  portal-cache:
+  caddy-data:
+  caddy-config:

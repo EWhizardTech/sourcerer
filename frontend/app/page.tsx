@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { useMe } from "@/components/portal/use-me";
 import {
   MessagesSquare,
   BrainCircuit,
@@ -70,9 +72,16 @@ function StatusDot({ status }: { status: string }) {
 }
 
 export default function Dashboard() {
+  const router = useRouter();
+  const { data: me, isLoading: meLoading } = useMe();
   const [health, setHealth] = useState<AggregateHealth | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Beta: the dashboard is an admin surface; everyone else lands on the portal.
+  useEffect(() => {
+    if (!meLoading && !me?.is_admin) router.replace("/resources");
+  }, [me, meLoading, router]);
 
   const refresh = useCallback(async () => {
     setLoading(true);

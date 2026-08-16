@@ -1,5 +1,7 @@
 "use client";
 
+import AdminOnly from "@/components/portal/admin-only";
+
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -11,7 +13,7 @@ import {
 } from "lucide-react";
 import { ingestGdrive, type IngestedFile } from "@/lib/api";
 
-export default function IngestionPage() {
+function IngestionWorkbench() {
   const [folderId, setFolderId] = useState("");
   const [courseCode, setCourseCode] = useState("");
   const [year, setYear] = useState("");
@@ -160,5 +162,17 @@ export default function IngestionPage() {
         </motion.div>
       )}
     </div>
+  );
+}
+
+export default function IngestionPage() {
+  return (
+    <AdminOnly
+      icon={FolderInput}
+      title="Ingestion"
+      description="Bring your own documents into the library. During the beta, content is curated by the library owner."
+    >
+      <IngestionWorkbench />
+    </AdminOnly>
   );
 }

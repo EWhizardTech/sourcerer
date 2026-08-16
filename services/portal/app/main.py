@@ -18,7 +18,7 @@ from app.routes.admin import router as admin_router
 from app.routes.auth import router as auth_router
 from app.routes.catalog import router as catalog_router
 from app.routes.content import router as content_router
-from app.routes.requests import grants_router
+from app.routes.requests import grants_router, me_router
 from app.routes.requests import router as requests_router
 from app.services.catalog_sync import periodic_sync_loop
 from sourcerer_core.config import settings
@@ -64,6 +64,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(catalog_router, prefix="/api/v1")
 app.include_router(requests_router, prefix="/api/v1")
 app.include_router(grants_router, prefix="/api/v1")
+app.include_router(me_router, prefix="/api/v1")
 app.include_router(content_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 

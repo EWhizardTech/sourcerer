@@ -25,7 +25,6 @@ import {
   CatalogNode,
   createAccessRequest,
   getMyGrants,
-  loginUrl,
   searchCatalog,
 } from "@/lib/portal-api";
 
@@ -47,12 +46,12 @@ function SignInCard() {
           Browse the academic resource library, request timed access, and read
           everything right here — sign in with your Google account to begin.
         </p>
-        <a
-          href={loginUrl}
-          className="btn-primary mt-6 inline-block rounded-xl px-6 py-3 text-sm font-semibold text-white"
+        <Link
+          href="/signin"
+          className="btn-primary mt-6 inline-block rounded-md px-6 py-3 text-sm font-semibold text-white"
         >
-          Sign in with Google
-        </a>
+          Sign in to continue
+        </Link>
       </motion.div>
     </div>
   );

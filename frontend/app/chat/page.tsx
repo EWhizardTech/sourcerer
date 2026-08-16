@@ -1,5 +1,7 @@
 "use client";
 
+import AdminOnly from "@/components/portal/admin-only";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
@@ -12,6 +14,7 @@ import {
   FileText,
   Globe,
   ChevronDown,
+  MessagesSquare,
 } from "lucide-react";
 import {
   streamChat,
@@ -106,7 +109,7 @@ function SourceCard({ source }: { source: ChatSource }) {
   );
 }
 
-export default function ChatPage() {
+function ChatWorkbench() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -359,5 +362,17 @@ export default function ChatPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <AdminOnly
+      icon={MessagesSquare}
+      title="Chat"
+      description="Ask questions across the whole library and get streamed, cited answers grounded in the actual course material."
+    >
+      <ChatWorkbench />
+    </AdminOnly>
   );
 }

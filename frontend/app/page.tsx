@@ -1,205 +1,168 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { useMe } from "@/components/portal/use-me";
 import {
-  MessagesSquare,
-  BrainCircuit,
-  FolderInput,
-  RefreshCw,
-  Server,
-  Database,
-  Zap,
   ArrowRight,
+  Eye,
+  FolderLock,
+  Network,
+  ShieldCheck,
+  Sparkles,
+  Timer,
 } from "lucide-react";
-import { getHealth, type AggregateHealth } from "@/lib/api";
+import Link from "next/link";
+import { BetaBadge } from "@/components/app-shell";
+import { useMe } from "@/components/portal/use-me";
 
-const SERVICE_META: Record<
-  string,
-  { label: string; blurb: string; icon: typeof Server }
-> = {
-  ingestion: {
-    label: "Ingestion",
-    blurb: "Drive intake · parse · chunk · embed",
-    icon: Database,
-  },
-  retrieval: {
-    label: "Retrieval",
-    blurb: "Agentic RAG · streaming · citations",
-    icon: Zap,
-  },
-  quiz: {
-    label: "Quiz",
-    blurb: "T5 question generation · NLP",
-    icon: BrainCircuit,
-  },
-};
-
-const ACTIONS = [
+const FEATURES = [
   {
-    href: "/chat",
-    icon: MessagesSquare,
-    title: "Ask Sourcerer",
-    text: "Chat with your knowledge base — streamed answers with inline citations.",
+    icon: Timer,
+    title: "Timed access",
+    text: "Request exactly the folders and files you need. The owner grants access for a set period — no link-sharing, no leaks.",
   },
   {
-    href: "/quiz",
-    icon: BrainCircuit,
-    title: "Generate a quiz",
-    text: "Turn course material into an interactive multiple-choice quiz.",
+    icon: Eye,
+    title: "Read everything in-app",
+    text: "PDFs, slides, notes, images and lectures render right here. Nothing to download, nothing to install.",
   },
   {
-    href: "/ingestion",
-    icon: FolderInput,
-    title: "Ingest documents",
-    text: "Pull a Google Drive folder through the processing pipeline.",
+    icon: Network,
+    title: "A connected library",
+    text: "Browse nine semesters as a tree or an interactive graph — notes link to notes, the way knowledge actually connects.",
   },
 ];
 
-function StatusDot({ status }: { status: string }) {
-  const color =
-    status === "ok"
-      ? "text-success bg-success"
-      : status === "down"
-        ? "text-danger bg-danger"
-        : "text-warning bg-warning";
-  return (
-    <span className={`dot-pulse inline-block size-2.5 rounded-full ${color}`} />
-  );
-}
-
-export default function Dashboard() {
-  const router = useRouter();
-  const { data: me, isLoading: meLoading } = useMe();
-  const [health, setHealth] = useState<AggregateHealth | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Beta: the dashboard is an admin surface; everyone else lands on the portal.
-  useEffect(() => {
-    if (!meLoading && !me?.is_admin) router.replace("/resources");
-  }, [me, meLoading, router]);
-
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    try {
-      setHealth(await getHealth());
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Gateway unreachable");
-      setHealth(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    refresh();
-    const id = setInterval(refresh, 15000);
-    return () => clearInterval(id);
-  }, [refresh]);
+export default function LandingPage() {
+  const { data: me } = useMe();
 
   return (
-    <div className="mx-auto max-w-5xl px-8 py-12">
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-4xl font-medium tracking-[-0.02em]">
-          Welcome to <span className="gradient-text">Sourcerer</span>
-        </h1>
-        <p className="mt-3 max-w-xl text-muted">
-          Retrieval-augmented answers, quizzes and ingestion over your course
-          material — powered by hybrid search, reranking and grounded citations.
-        </p>
-      </motion.div>
-
-      {/* System status */}
-      <div className="mt-10 flex items-center justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-muted">
-          System status
-        </h2>
-        <button
-          onClick={refresh}
-          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-muted transition hover:border-border-strong hover:text-text"
-        >
-          <RefreshCw className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </button>
-      </div>
-
-      <div className="mt-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="glass p-5"
-        >
-          <div className="flex items-center justify-between">
-            <Server className="size-5 text-accent" />
-            <StatusDot status={error ? "down" : health ? "ok" : "..."} />
-          </div>
-          <div className="mt-3 font-semibold">Gateway</div>
-          <div className="mt-0.5 text-xs text-muted">
-            {error ? error : "Single entry point · proxy + health"}
-          </div>
-        </motion.div>
-
-        {Object.entries(SERVICE_META).map(([key, meta], i) => {
-          const svc = health?.services?.[key];
-          const status = svc?.status ?? (error ? "down" : "…");
-          return (
-            <motion.div
-              key={key}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 * (i + 1) }}
-              className="glass p-5"
-            >
-              <div className="flex items-center justify-between">
-                <meta.icon className="size-5 text-accent" />
-                <StatusDot status={status} />
-              </div>
-              <div className="mt-3 font-semibold">{meta.label}</div>
-              <div className="mt-0.5 text-xs text-muted">{meta.blurb}</div>
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Quick actions */}
-      <h2 className="mt-12 text-sm font-semibold uppercase tracking-widest text-muted">
-        Get started
-      </h2>
-      <div className="mt-4 grid gap-4 md:grid-cols-3">
-        {ACTIONS.map((action, i) => (
-          <motion.div
-            key={action.href}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 + 0.07 * i }}
-          >
+    <div className="flex min-h-screen flex-col">
+      {/* Top bar */}
+      <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5">
+        <div className="flex items-center gap-2.5">
+          <span className="grid size-8 place-items-center rounded-md bg-accent-2">
+            <Sparkles className="size-4.5 text-white" />
+          </span>
+          <span className="text-[17px] font-semibold tracking-tight">
+            Sourcerer
+          </span>
+          <BetaBadge />
+        </div>
+        <nav className="flex items-center gap-2">
+          {me ? (
             <Link
-              href={action.href}
-              className="glass glass-hover group block h-full p-6"
+              href="/home"
+              className="btn-primary rounded-md px-4 py-2 text-sm font-semibold text-white"
             >
-              <span className="grid size-11 place-items-center rounded-xl bg-accent-2/15 ring-1 ring-accent/25">
-                <action.icon className="size-5 text-accent" />
-              </span>
-              <div className="mt-4 flex items-center gap-2 font-semibold">
-                {action.title}
-                <ArrowRight className="size-4 -translate-x-1 opacity-0 transition-[transform,opacity] duration-100 group-hover:translate-x-0 group-hover:opacity-100" />
-              </div>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">
-                {action.text}
-              </p>
+              Open library
             </Link>
-          </motion.div>
-        ))}
-      </div>
+          ) : (
+            <>
+              <Link
+                href="/signin"
+                className="rounded-md px-4 py-2 text-sm font-medium text-muted transition-colors duration-100 hover:text-text"
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/signup"
+                className="btn-primary rounded-md px-4 py-2 text-sm font-semibold text-white"
+              >
+                Get access
+              </Link>
+            </>
+          )}
+        </nav>
+      </header>
+
+      {/* Hero */}
+      <section className="mx-auto w-full max-w-6xl px-6 pb-20 pt-24 text-center">
+        <motion.h1
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mx-auto max-w-3xl text-[44px] font-semibold leading-[1.05] tracking-[-1.2px] sm:text-[60px]"
+        >
+          Nine semesters of knowledge,
+          <br />
+          <span className="gradient-text">one careful library.</span>
+        </motion.h1>
+        <motion.p
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.08 }}
+          className="mx-auto mt-6 max-w-xl text-[17px] leading-relaxed text-muted"
+        >
+          Sourcerer is the front door to a curated academic archive — course
+          notes, papers, slides and lectures. Sign in, request what you need,
+          and read it all right here.
+        </motion.p>
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.16 }}
+          className="mt-9 flex items-center justify-center gap-3"
+        >
+          <Link
+            href={me ? "/home" : "/signup"}
+            className="btn-primary group flex items-center gap-2 rounded-md px-6 py-3 text-sm font-semibold text-white"
+          >
+            {me ? "Open your library" : "Get access"}
+            <ArrowRight className="size-4 transition-transform duration-100 group-hover:translate-x-0.5" />
+          </Link>
+          <Link
+            href="/resources"
+            className="rounded-md border border-border px-6 py-3 text-sm font-medium text-muted transition-colors duration-100 hover:border-border-strong hover:text-text"
+          >
+            Browse the index
+          </Link>
+        </motion.div>
+      </section>
+
+      {/* Features */}
+      <section className="mx-auto w-full max-w-5xl px-6 pb-24">
+        <div className="grid gap-4 md:grid-cols-3">
+          {FEATURES.map((feature, i) => (
+            <motion.div
+              key={feature.title}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.2 + i * 0.06 }}
+              className="glass p-6 text-left"
+            >
+              <span className="grid size-10 place-items-center rounded-md bg-accent-2/15 ring-1 ring-accent/25">
+                <feature.icon className="size-5 text-accent" />
+              </span>
+              <h2 className="mt-4 font-semibold">{feature.title}</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">
+                {feature.text}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="mt-10 flex items-center justify-center gap-2 text-xs text-faint"
+        >
+          <ShieldCheck className="size-3.5" />
+          Content is watermarked per viewer and served read-only — the library
+          stays the owner&apos;s.
+        </motion.div>
+      </section>
+
+      {/* Footer */}
+      <footer className="mt-auto border-t border-border">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-5 text-xs text-faint">
+          <span className="flex items-center gap-2">
+            <FolderLock className="size-3.5" /> Sourcerer — a private academic
+            library
+          </span>
+          <span>Beta · access by request</span>
+        </div>
+      </footer>
     </div>
   );
 }

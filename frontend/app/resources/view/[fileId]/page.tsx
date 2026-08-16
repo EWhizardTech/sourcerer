@@ -18,7 +18,6 @@ import {
   contentPdfUrl,
   contentRawUrl,
   getContentMeta,
-  loginUrl,
 } from "@/lib/portal-api";
 
 export default function ViewerPage({
@@ -49,10 +48,10 @@ export default function ViewerPage({
         <div className="glass max-w-md p-8 text-center">
           <p className="text-sm text-muted">Sign in to view this resource.</p>
           <a
-            href={loginUrl}
+            href="/signin"
             className="btn-primary mt-4 inline-block rounded-xl px-5 py-2.5 text-sm font-semibold text-white"
           >
-            Sign in with Google
+            Sign in to continue
           </a>
         </div>
       </div>

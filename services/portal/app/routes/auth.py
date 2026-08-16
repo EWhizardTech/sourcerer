@@ -63,7 +63,7 @@ async def login() -> RedirectResponse:
 async def callback(request: Request, db: DbSession) -> RedirectResponse:
     """Exchange the auth code, upsert the user, set the session cookie."""
     error_redirect = RedirectResponse(
-        f"{settings.PORTAL_FRONTEND_ORIGIN}/resources?auth_error=1", status_code=302
+        f"{settings.PORTAL_FRONTEND_ORIGIN}/signin?error=oauth", status_code=302
     )
     error_redirect.delete_cookie(STATE_COOKIE, path="/")
 
@@ -119,7 +119,7 @@ async def callback(request: Request, db: DbSession) -> RedirectResponse:
     await db.commit()
 
     response = RedirectResponse(
-        f"{settings.PORTAL_FRONTEND_ORIGIN}/resources", status_code=302
+        f"{settings.PORTAL_FRONTEND_ORIGIN}/home", status_code=302
     )
     response.delete_cookie(STATE_COOKIE, path="/")
     response.set_cookie(

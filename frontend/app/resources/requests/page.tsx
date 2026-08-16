@@ -9,7 +9,6 @@ import {
   cancelRequest,
   getMyGrants,
   getMyRequests,
-  loginUrl,
 } from "@/lib/portal-api";
 
 const STATUS_STYLES: Record<string, string> = {
@@ -58,10 +57,10 @@ export default function MyRequestsPage() {
     return (
       <div className="grid min-h-[70vh] place-items-center">
         <a
-          href={loginUrl}
+          href="/signin"
           className="btn-primary rounded-xl px-6 py-3 text-sm font-semibold text-white"
         >
-          Sign in with Google
+          Sign in to continue
         </a>
       </div>
     );

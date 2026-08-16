@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Nav from "@/components/nav";
+import AppShell from "@/components/app-shell";
 import PortalProviders from "@/components/portal/providers";
 
 export const metadata: Metadata = {
   title: "Sourcerer",
-  description: "AI-powered RAG platform for educational content",
+  description: "Your academic resource library, served with focus.",
 };
 
 export default function RootLayout({
@@ -15,8 +15,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <PortalProviders>
-          <Nav />
-          <main className="ml-60 min-h-screen">{children}</main>
+          <AppShell>{children}</AppShell>
         </PortalProviders>
       </body>
     </html>

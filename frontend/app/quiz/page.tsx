@@ -1,5 +1,7 @@
 "use client";
 
+import AdminOnly from "@/components/portal/admin-only";
+
 import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -21,7 +23,7 @@ const DIFFICULTY_STYLE: Record<string, string> = {
   Hard: "bg-danger/15 text-danger ring-danger/30",
 };
 
-export default function QuizPage() {
+function QuizWorkbench() {
   const [phase, setPhase] = useState<Phase>("setup");
   const [error, setError] = useState<string | null>(null);
 
@@ -384,5 +386,17 @@ export default function QuizPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function QuizPage() {
+  return (
+    <AdminOnly
+      icon={BrainCircuit}
+      title="Quiz"
+      description="Turn any course, topic or folder into an interactive practice quiz — generated from the material you have access to."
+    >
+      <QuizWorkbench />
+    </AdminOnly>
   );
 }

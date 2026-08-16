@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 
-from app.db.models import AccessRequest, AccessRequestItem, DriveNode
+from app.db.models import AccessRequest, AccessRequestItem, AuditEvent, DriveNode
 from app.deps import CurrentUser, DbSession
 from app.services import audit
 from app.services.access import active_grants
@@ -127,6 +127,106 @@ async def cancel_request(request_id: uuid.UUID, user: CurrentUser, db: DbSession
     )
     await db.commit()
     return {"ok": True}
+
+
+# Participant home dashboard: one call for grants, recent views, and the
+# latest request's status.
+me_router = APIRouter(prefix="/portal/me", tags=["requests"])
+
+
+@me_router.get("/overview")
+async def my_overview(user: CurrentUser, db: DbSession) -> dict:
+    pairs = await active_grants(db, user)
+
+    # Last viewed materials: newest 'content_viewed' audit rows, deduped by
+    # node, joined to the (possibly swept) catalog.
+    view_rows = (
+        await db.execute(
+            select(AuditEvent.node_id, AuditEvent.created_at)
+            .where(
+                AuditEvent.user_id == user.id,
+                AuditEvent.event == "content_viewed",
+            )
+            .order_by(AuditEvent.created_at.desc())
+            .limit(30)
+        )
+    ).all()
+    recent: list[tuple[str, object]] = []
+    seen: set[str] = set()
+    for node_id, viewed_at in view_rows:
+        if node_id and node_id not in seen:
+            seen.add(node_id)
+            recent.append((node_id, viewed_at))
+        if len(recent) == 5:
+            break
+    nodes = {
+        n.id: n
+        for n in (
+            await db.execute(
+                select(DriveNode).where(DriveNode.id.in_([r[0] for r in recent]))
+            )
+        ).scalars()
+    }
+
+    latest_request = (
+        await db.execute(
+            select(AccessRequest)
+            .where(AccessRequest.user_id == user.id)
+            .order_by(AccessRequest.created_at.desc())
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    latest_items = 0
+    if latest_request:
+        latest_items = len(
+            (
+                await db.execute(
+                    select(AccessRequestItem.id).where(
+                        AccessRequestItem.request_id == latest_request.id
+                    )
+                )
+            ).all()
+        )
+
+    return {
+        "grants": [
+            {
+                "id": str(grant.id),
+                "node_id": grant.node_id,
+                "name": node.name if node else "(removed from library)",
+                "path": node.path_names if node else None,
+                "path_ids": node.path_ids if node else None,
+                "is_folder": node.is_folder if node else False,
+                "expires_at": grant.expires_at.isoformat(),
+            }
+            for grant, node in pairs
+        ],
+        "recent_views": [
+            {
+                "node_id": node_id,
+                "name": nodes[node_id].name if node_id in nodes else None,
+                "path": nodes[node_id].path_names if node_id in nodes else None,
+                "viewed_at": viewed_at.isoformat(),
+            }
+            for node_id, viewed_at in recent
+            if node_id in nodes
+        ],
+        "latest_request": (
+            {
+                "id": str(latest_request.id),
+                "status": latest_request.status,
+                "created_at": latest_request.created_at.isoformat(),
+                "decided_at": (
+                    latest_request.decided_at.isoformat()
+                    if latest_request.decided_at
+                    else None
+                ),
+                "items": latest_items,
+            }
+            if latest_request
+            else None
+        ),
+    }
 
 
 # Grants live under /portal/requests' sibling prefix for the user view.

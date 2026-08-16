@@ -40,7 +40,9 @@ services:
       INGESTION_URL: http://ingestion:8000
       RETRIEVAL_URL: http://retrieval:8000
       QUIZ_URL: http://quiz:8000
-      CORS_ORIGINS: http://localhost:3000,http://localhost:3001
+      # :3000 is the containerized frontend; :3001 is `next dev` run on the
+      # host, which auto-increments while the container holds :3000.
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3001}
     depends_on:
       - ingestion
       - retrieval

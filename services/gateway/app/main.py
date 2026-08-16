@@ -31,7 +31,11 @@ logger = logging.getLogger(__name__)
 INGESTION_URL = os.getenv("INGESTION_URL", "http://localhost:8010")
 RETRIEVAL_URL = os.getenv("RETRIEVAL_URL", "http://localhost:8011")
 QUIZ_URL = os.getenv("QUIZ_URL", "http://localhost:8012")
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+    if origin.strip()
+]
 
 SERVICES = {
     "ingestion": INGESTION_URL,

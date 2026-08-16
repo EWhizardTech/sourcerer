@@ -23,7 +23,7 @@
 | `INGESTION_URL` | `http://localhost:8010` | Ingestion service base URL |
 | `RETRIEVAL_URL` | `http://localhost:8011` | Retrieval service base URL |
 | `QUIZ_URL` | `http://localhost:8012` | Quiz service base URL |
-| `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed origins |
+| `CORS_ORIGINS` | `http://localhost:3000,http://localhost:3001` | Comma-separated allowed origins (`:3001` = host-run `next dev`) |
 
 ## Health aggregation
 

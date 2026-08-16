@@ -7,6 +7,11 @@ on:
       - "docs/**"
       - "mkdocs.yml"
       - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
   workflow_dispatch:
 
 permissions:
@@ -14,9 +19,11 @@ permissions:
   pages: write
   id-token: write
 
+# Serialize Pages deployments, but do NOT cancel in-progress runs — cancelling
+# mid actions/deploy-pages can leave the github-pages environment locked.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -24,24 +31,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.13"
-          cache: pip
+          enable-cache: true
 
-      - name: Install MkDocs
-        run: pip install "mkdocs>=1.6.0" "mkdocs-material>=9.5.0"
-
-      - name: Build site
-        run: mkdocs build --strict
+      # Docs deps live in the root dev dependency group and are pinned by uv.lock.
+      - name: Install docs dependencies
+        run: uv sync --only-group dev
 
       - uses: actions/configure-pages@v5
+        if: github.event_name != 'pull_request'
+        with:
+          enablement: true
+
+      - name: Build site
+        run: uv run --no-sync mkdocs build --strict
 
       - uses: actions/upload-pages-artifact@v3
+        if: github.event_name != 'pull_request'
         with:
           path: site
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     environment:

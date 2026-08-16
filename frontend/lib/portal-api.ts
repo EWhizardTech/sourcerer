@@ -255,6 +255,10 @@ export const adminListUsers = () =>
     "/admin/users"
   );
 
+/** Server-side session kill switch: invalidates all of a user's live sessions. */
+export const adminRevokeSessions = (userId: string) =>
+  send<{ ok: boolean }>("POST", `/admin/users/${userId}/revoke-sessions`);
+
 export const adminAudit = (limit = 50) =>
   get<{ events: AuditEventRow[] }>(`/admin/audit?limit=${limit}`);
 

@@ -51,6 +51,12 @@ class User(Base):
         DateTime(timezone=True), nullable=False, default=utcnow
     )
     last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Bumped on logout / admin revoke; the session JWT carries the value it was
+    # minted with, and current_user rejects tokens whose value is stale. This is
+    # the server-side kill switch for stateless sessions.
+    session_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
 
 
 class DriveNode(Base):

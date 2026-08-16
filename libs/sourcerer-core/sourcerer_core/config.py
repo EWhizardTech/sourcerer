@@ -86,7 +86,7 @@ class Settings(BaseSettings):
     # _validate_portal_production check below refuses this default when
     # PORTAL_COOKIE_SECURE is true.
     PORTAL_SESSION_SECRET: str = _INSECURE_SESSION_SECRET
-    PORTAL_SESSION_TTL_SECONDS: int = 60 * 60 * 24 * 7  # 7 days
+    PORTAL_SESSION_TTL_SECONDS: int = 60 * 60 * 24  # 24h; logout/revoke also kill it
     # Comma-separated emails treated as portal admins (evaluated per request).
     ADMIN_EMAILS: str = ""
     # Drive folder the portal catalogs (metadata only — never file contents).

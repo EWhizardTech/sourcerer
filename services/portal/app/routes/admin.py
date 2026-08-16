@@ -325,6 +325,27 @@ async def list_users(_: CurrentAdmin, db: DbSession) -> dict:
     }
 
 
+@router.post("/users/{user_id}/revoke-sessions")
+async def revoke_user_sessions(
+    user_id: uuid.UUID, admin: CurrentAdmin, db: DbSession
+) -> dict:
+    """Invalidate all of a user's active sessions (server-side kill switch)."""
+    user = (
+        await db.execute(select(User).where(User.id == user_id))
+    ).scalar_one_or_none()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.session_version += 1
+    await audit.record(
+        db,
+        "sessions_revoked",
+        user_id=admin.id,
+        meta={"target_user_id": str(user.id)},
+    )
+    await db.commit()
+    return {"ok": True}
+
+
 @router.get("/audit")
 async def list_audit(
     _: CurrentAdmin,

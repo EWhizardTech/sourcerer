@@ -24,6 +24,7 @@ from app.services.security import (
     cookie_kwargs,
     create_session_token,
     create_state_token,
+    decode_session_token,
     is_admin_email,
     verify_state_token,
 )
@@ -141,7 +142,7 @@ async def callback(request: Request, db: DbSession) -> RedirectResponse:
     response.delete_cookie(STATE_COOKIE, path="/")
     response.set_cookie(
         SESSION_COOKIE,
-        create_session_token(claims["sub"], email, user.name),
+        create_session_token(claims["sub"], email, user.name, user.session_version),
         max_age=settings.PORTAL_SESSION_TTL_SECONDS,
         **cookie_kwargs(),
     )
@@ -160,7 +161,18 @@ async def me(user: CurrentUser) -> dict:
 
 
 @router.post("/logout")
-async def logout() -> JSONResponse:
+async def logout(request: Request, db: DbSession) -> JSONResponse:
+    # Bump session_version so the just-cleared cookie (and any copy of it) is
+    # rejected server-side for the rest of its lifetime, not just deleted.
+    token = request.cookies.get(SESSION_COOKIE)
+    claims = decode_session_token(token) if token else None
+    if claims and claims.get("sub"):
+        user = (
+            await db.execute(select(User).where(User.google_sub == claims["sub"]))
+        ).scalar_one_or_none()
+        if user is not None:
+            user.session_version += 1
+            await db.commit()
     response = JSONResponse({"ok": True})
     response.delete_cookie(SESSION_COOKIE, path="/")
     return response

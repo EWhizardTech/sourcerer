@@ -24,6 +24,9 @@ async def current_user(request: Request, db: DbSession) -> User:
     ).scalar_one_or_none()
     if user is None:
         raise HTTPException(status_code=401, detail="Unknown user")
+    # Reject sessions minted before the last logout / admin revoke.
+    if claims.get("sv") != user.session_version:
+        raise HTTPException(status_code=401, detail="Session revoked")
     return user
 
 

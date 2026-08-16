@@ -13,13 +13,16 @@ _ALGO = "HS256"
 _STATE_TTL_SECONDS = 600
 
 
-def create_session_token(user_id: str, email: str, name: str | None) -> str:
+def create_session_token(
+    user_id: str, email: str, name: str | None, session_version: int = 0
+) -> str:
     now = int(time.time())
     return jwt.encode(
         {
             "sub": user_id,
             "email": email,
             "name": name,
+            "sv": session_version,  # server-side revocation counter
             "iat": now,
             "exp": now + settings.PORTAL_SESSION_TTL_SECONDS,
         },

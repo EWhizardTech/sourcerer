@@ -25,8 +25,10 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
-      - frontend
-      - gateway
+      frontend:
+        condition: service_healthy
+      gateway:
+        condition: service_healthy
 
   frontend:
     build:
@@ -35,6 +37,12 @@ services:
         # Empty -> the client uses relative /api/... URLs (same-origin via Caddy).
         NEXT_PUBLIC_API_URL: ""
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 20s
 
   gateway:
     build:
@@ -48,8 +56,15 @@ services:
       QUIZ_URL: ""
       PORTAL_URL: http://portal:8000
       CORS_ORIGINS: https://${SITE_ADDRESS}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 15s
     depends_on:
-      - portal
+      portal:
+        condition: service_healthy
 
   portal:
     build:
@@ -76,6 +91,12 @@ services:
     volumes:
       - ../secrets:/srv/secrets:ro
       - portal-cache:/srv/portal-cache
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health').status==200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 45s
     depends_on:
       postgres:
         condition: service_healthy

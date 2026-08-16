@@ -37,10 +37,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
-# Same paths as the builder: sourcerer-core is installed editable from /srv/libs.
-COPY --from=builder /srv/.venv /srv/.venv
-COPY --from=builder /srv/libs /srv/libs
-COPY --from=builder /srv/services/portal /srv/services/portal
+# Run as an unprivileged user (LibreOffice parses admin-supplied documents; the
+# service-account key and DB creds live in this process — keep it off uid 0).
+# HOME must be writable for LibreOffice's profile. NOTE: the mounted
+# service-account key must be readable by this user (mode 644, Google's default).
+RUN useradd --create-home --uid 10001 app
+ENV HOME=/home/app
 
+# Same paths as the builder: sourcerer-core is installed editable from /srv/libs.
+COPY --from=builder --chown=app:app /srv/.venv /srv/.venv
+COPY --from=builder --chown=app:app /srv/libs /srv/libs
+COPY --from=builder --chown=app:app /srv/services/portal /srv/services/portal
+RUN mkdir -p /srv/portal-cache && chown -R app:app /srv/portal-cache
+
+USER app
 WORKDIR /srv/services/portal
 CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000"]

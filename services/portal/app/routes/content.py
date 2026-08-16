@@ -30,7 +30,26 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/portal/content", tags=["content"])
 
 _DRIVE_FILES_URL = "https://www.googleapis.com/drive/v3/files"
-_NO_STORE = {"Cache-Control": "private, no-store"}
+# Every content response: never cache, never MIME-sniff, and neutralize any
+# active document (HTML/SVG) if it is ever rendered as a top-level navigation.
+# The portal SPA fetches these bytes via fetch()/media elements, so `sandbox`
+# and `default-src 'none'` don't affect normal viewing — they only bite when a
+# file is opened directly, which is exactly the same-origin XSS vector we close.
+_SECURE_HEADERS = {
+    "Cache-Control": "private, no-store",
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'; sandbox; frame-ancestors 'none'",
+}
+# MIME types the browser would execute script from if rendered inline; force a
+# download disposition for these so a direct link can't run in our origin.
+_ACTIVE_MIMES = {
+    "text/html",
+    "application/xhtml+xml",
+    "image/svg+xml",
+    "application/xml",
+    "text/xml",
+    "text/xsl",
+}
 
 _TEXT_EXTENSIONS = {
     "txt", "sql", "md", "py", "c", "cpp", "h", "hpp", "js", "ts", "java",
@@ -43,15 +62,20 @@ _token_cache: dict = {"token": None, "acquired": 0.0}
 _token_lock = asyncio.Lock()
 
 
-def _content_disposition(filename: str) -> str:
-    """Build an inline Content-Disposition that survives Starlette's latin-1
-    header encoding. Non-latin-1 names (CJK, em dashes, curly quotes) would
-    otherwise raise UnicodeEncodeError and 500 the view. Per RFC 6266/5987 we
-    emit an ASCII fallback plus a UTF-8 filename* that modern browsers prefer."""
+def _content_disposition(filename: str, mime_type: str = "") -> str:
+    """Build a Content-Disposition that survives Starlette's latin-1 header
+    encoding. Non-latin-1 names (CJK, em dashes, curly quotes) would otherwise
+    raise UnicodeEncodeError and 500 the view. Per RFC 6266/5987 we emit an
+    ASCII fallback plus a UTF-8 filename*. Active document types are forced to
+    `attachment` so a direct link can't render script in our origin."""
+    disposition = "attachment" if mime_type in _ACTIVE_MIMES else "inline"
     fallback = (
         re.sub(r'[\r\n"\\]', "_", filename).encode("ascii", "replace").decode("ascii")
     )
-    return f"inline; filename=\"{fallback}\"; filename*=UTF-8''{quote(filename, safe='')}"
+    return (
+        f"{disposition}; filename=\"{fallback}\"; "
+        f"filename*=UTF-8''{quote(filename, safe='')}"
+    )
 
 
 async def _drive_token() -> str:
@@ -173,8 +197,8 @@ async def raw(
         media_type=node.mime_type,
         headers={
             **passthrough,
-            **_NO_STORE,
-            "Content-Disposition": _content_disposition(node.name),
+            **_SECURE_HEADERS,
+            "Content-Disposition": _content_disposition(node.name, node.mime_type),
         },
     )
 
@@ -198,7 +222,9 @@ async def converted_pdf(file_id: str, user: CurrentUser, db: DbSession) -> FileR
         pdf_path,
         media_type="application/pdf",
         headers={
-            **_NO_STORE,
-            "Content-Disposition": _content_disposition(f"{Path(node.name).stem}.pdf"),
+            **_SECURE_HEADERS,
+            "Content-Disposition": _content_disposition(
+                f"{Path(node.name).stem}.pdf", "application/pdf"
+            ),
         },
     )

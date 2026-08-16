@@ -121,8 +121,8 @@ services:
       # frontend this compose publishes); set PORTAL_FRONTEND_ORIGIN in .env to
       # http://localhost:3001 if you run `next dev` on the host instead.
       PORTAL_FRONTEND_ORIGIN: ${PORTAL_FRONTEND_ORIGIN:-http://localhost:3000}
-      # Drive folder to catalog. No source default — supply your own here/in .env.
-      PORTAL_ROOT_FOLDER_ID: ${PORTAL_ROOT_FOLDER_ID:-1f8E8ZIZO0Rhfwi6VO3OJlGBIMLDDaemL}
+      # Drive folder to catalog — supplied from .env (no hardcoded default).
+      PORTAL_ROOT_FOLDER_ID: ${PORTAL_ROOT_FOLDER_ID:?set PORTAL_ROOT_FOLDER_ID in .env}
     volumes:
       - ./secrets:/srv/secrets:ro
       - portal-cache:/srv/portal-cache

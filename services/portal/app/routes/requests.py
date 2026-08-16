@@ -112,9 +112,11 @@ async def my_requests(user: CurrentUser, db: DbSession) -> dict:
 async def cancel_request(request_id: uuid.UUID, user: CurrentUser, db: DbSession) -> dict:
     req = (
         await db.execute(
-            select(AccessRequest).where(
+            select(AccessRequest)
+            .where(
                 AccessRequest.id == request_id, AccessRequest.user_id == user.id
             )
+            .with_for_update()
         )
     ).scalar_one_or_none()
     if req is None:

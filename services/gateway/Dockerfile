@@ -24,8 +24,10 @@ FROM python:3.13-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH="/srv/.venv/bin:$PATH"
 
-COPY --from=builder /srv/.venv /srv/.venv
-COPY services/gateway/ /srv/services/gateway/
+RUN useradd --create-home --uid 10001 app
+COPY --from=builder --chown=app:app /srv/.venv /srv/.venv
+COPY --chown=app:app services/gateway/ /srv/services/gateway/
 
+USER app
 WORKDIR /srv/services/gateway
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

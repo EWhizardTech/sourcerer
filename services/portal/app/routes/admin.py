@@ -119,7 +119,11 @@ async def approve_request(
     request_id: uuid.UUID, body: ApproveBody, admin: CurrentAdmin, db: DbSession
 ) -> dict:
     req = (
-        await db.execute(select(AccessRequest).where(AccessRequest.id == request_id))
+        await db.execute(
+            select(AccessRequest)
+            .where(AccessRequest.id == request_id)
+            .with_for_update()
+        )
     ).scalar_one_or_none()
     if req is None:
         raise HTTPException(status_code=404, detail="Request not found")
@@ -185,7 +189,11 @@ async def deny_request(
     request_id: uuid.UUID, body: DenyBody, admin: CurrentAdmin, db: DbSession
 ) -> dict:
     req = (
-        await db.execute(select(AccessRequest).where(AccessRequest.id == request_id))
+        await db.execute(
+            select(AccessRequest)
+            .where(AccessRequest.id == request_id)
+            .with_for_update()
+        )
     ).scalar_one_or_none()
     if req is None:
         raise HTTPException(status_code=404, detail="Request not found")
@@ -250,7 +258,14 @@ async def patch_grant(
     ).scalar_one_or_none()
     if grant is None:
         raise HTTPException(status_code=404, detail="Grant not found")
-    grant.expires_at = _as_utc(body.expires_at)
+    if grant.status != "active":
+        raise HTTPException(status_code=409, detail=f"Grant is {grant.status}")
+    new_expiry = _as_utc(body.expires_at)
+    if new_expiry <= _as_utc(grant.starts_at):
+        raise HTTPException(
+            status_code=400, detail="expires_at must be after the grant start"
+        )
+    grant.expires_at = new_expiry
     await audit.record(
         db,
         "grant_updated",

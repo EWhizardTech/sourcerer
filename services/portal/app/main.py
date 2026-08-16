@@ -53,10 +53,16 @@ _SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
 @app.middleware("http")
 async def csrf_origin_guard(request: Request, call_next):
-    """Reject state-changing cross-origin requests (belt-and-braces vs Lax)."""
-    origin = request.headers.get("origin")
-    if request.method not in _SAFE_METHODS and origin and origin not in _ALLOWED_ORIGINS:
-        return JSONResponse({"detail": "Origin not allowed"}, status_code=403)
+    """Reject state-changing cross-origin requests (belt-and-braces vs Lax).
+
+    Fail closed: a non-safe method must carry an allowed Origin. Missing Origin
+    is rejected too, so this stays a real defense if the cookie is ever set to
+    SameSite=None. Browsers send Origin on all non-GET/HEAD requests, so the
+    SPA's own credentialed POST/PATCH/DELETE calls are unaffected."""
+    if request.method not in _SAFE_METHODS:
+        origin = request.headers.get("origin")
+        if origin is None or origin not in _ALLOWED_ORIGINS:
+            return JSONResponse({"detail": "Origin not allowed"}, status_code=403)
     return await call_next(request)
 
 

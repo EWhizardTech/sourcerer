@@ -111,6 +111,13 @@ async def callback(request: Request, db: DbSession) -> RedirectResponse:
         logger.error("ID token claim check failed (iss=%s)", claims.get("iss"))
         return error_redirect
 
+    # Admin status is derived from the email string, so an unverified email
+    # (an address the Google account hasn't proven it owns) must never be
+    # accepted — otherwise a first-login attacker could claim an admin address.
+    if claims.get("email_verified") not in (True, "true"):
+        logger.warning("OAuth callback rejected: email not verified")
+        return error_redirect
+
     email = (claims.get("email") or "").lower()
     if not email:
         return error_redirect

@@ -134,6 +134,11 @@ class Settings(BaseSettings):
                 raise ValueError(
                     "PORTAL_ROOT_FOLDER_ID must be set in production."
                 )
+            if not any(e.strip() for e in self.ADMIN_EMAILS.split(",")):
+                raise ValueError(
+                    "ADMIN_EMAILS must list at least one admin in production; "
+                    "otherwise no one can approve access requests."
+                )
         return self
 
 

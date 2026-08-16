@@ -108,3 +108,9 @@ Notes:
 - The PDF-conversion cache lives in the `portal-cache` volume and survives
   restarts; safe to delete anytime (rebuilds on demand).
 - Certificates auto-renew (Caddy).
+- The portal container runs as a non-root user. The mounted service-account
+  key must be world-readable: `chmod 644 secrets/acc.json`. Keep only the key
+  you actually use in `secrets/` — the whole directory is mounted read-only.
+- The `DB backup` above is manual. Schedule it (e.g. a daily cron running the
+  `pg_dump` line to off-box storage) — all users, grants, and the audit trail
+  live only in the `pgdata` volume; losing the VM loses them.

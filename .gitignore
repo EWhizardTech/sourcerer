@@ -213,6 +213,8 @@ secrets/
 
 tests/results/
 data/sourcerer.db
+# Local ingestion DB — never commit real ingestion state (any depth).
+**/data/sourcerer.db
 .vscode/
 data/sourcerer.db
 # MkDocs build output

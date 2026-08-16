@@ -1,9 +1,10 @@
-# GPU override: docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
-# NOTE: the default image ships CPU torch (see [tool.uv.sources] in pyproject.toml).
-# For CUDA in the container, point the linux torch source at a CUDA index
-# (e.g. pytorch-cu128), run `uv lock`, and rebuild the base image.
+# GPU override for the ingestion worker (docling acceleration):
+#   docker compose -f docker-compose.yml -f docker-compose.gpu.yml up -d
+# NOTE: images ship CPU torch (see [tool.uv.sources] in the service pyprojects).
+# For CUDA in a container, point the linux torch source at a CUDA index,
+# run `uv lock`, and rebuild that service's image.
 services:
-  worker:
+  ingestion-worker:
     deploy:
       resources:
         reservations:

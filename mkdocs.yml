@@ -1,0 +1,42 @@
+site_name: Sourcerer
+site_description: AI-powered RAG platform for educational content
+repo_url: https://github.com/hajay180505/sourcerer-backend
+repo_name: sourcerer
+
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: deep purple
+    accent: cyan
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.suggest
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - RAG Pipeline: rag-pipeline.md
+  - Services:
+      - Gateway: services/gateway.md
+      - Ingestion: services/ingestion.md
+      - Retrieval: services/retrieval.md
+      - Quiz: services/quiz.md
+  - Frontend: frontend.md
+  - Deployment: deployment.md
+  - Development: development.md

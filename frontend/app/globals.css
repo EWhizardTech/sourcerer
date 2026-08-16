@@ -1,0 +1,229 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #08070d;
+  --color-surface: #100f1a;
+  --color-surface-2: #17162a;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-text: #ecebf5;
+  --color-muted: #8b89a0;
+  --color-accent: #8b5cf6;
+  --color-accent-2: #22d3ee;
+  --color-success: #34d399;
+  --color-danger: #f87171;
+  --color-warning: #fbbf24;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Ambient background glows */
+.ambient {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(600px 400px at 15% -5%, rgba(139, 92, 246, 0.14), transparent 60%),
+    radial-gradient(700px 500px at 90% 10%, rgba(34, 211, 238, 0.08), transparent 60%),
+    radial-gradient(800px 600px at 50% 110%, rgba(139, 92, 246, 0.07), transparent 60%);
+}
+
+/* Glass card */
+.glass {
+  background: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.055),
+    rgba(255, 255, 255, 0.02)
+  );
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(14px);
+  border-radius: 1rem;
+}
+
+.glass-hover {
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+.glass-hover:hover {
+  border-color: rgba(139, 92, 246, 0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px -12px rgba(139, 92, 246, 0.25);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(92deg, #a78bfa 0%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Primary gradient button */
+.btn-primary {
+  background: linear-gradient(92deg, #7c3aed, #0891b2);
+  transition: filter 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 24px -6px rgba(124, 58, 237, 0.5);
+}
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Streaming caret */
+.stream-caret::after {
+  content: "▍";
+  color: var(--color-accent-2);
+  animation: blink 1s steps(1) infinite;
+  margin-left: 1px;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* Status dot pulse */
+.dot-pulse {
+  position: relative;
+}
+.dot-pulse::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.25;
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulse-ring {
+  0%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+/* Shimmer skeleton */
+.shimmer {
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.04) 40%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.04) 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Markdown content */
+.prose-chat {
+  line-height: 1.65;
+  font-size: 0.925rem;
+}
+.prose-chat p {
+  margin: 0.5rem 0;
+}
+.prose-chat ul,
+.prose-chat ol {
+  margin: 0.5rem 0 0.5rem 1.25rem;
+}
+.prose-chat ul {
+  list-style: disc;
+}
+.prose-chat ol {
+  list-style: decimal;
+}
+.prose-chat li {
+  margin: 0.2rem 0;
+}
+.prose-chat code {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 0.3rem;
+  padding: 0.05rem 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+.prose-chat pre {
+  background: #0c0b14;
+  border: 1px solid var(--color-border);
+  border-radius: 0.6rem;
+  padding: 0.8rem 1rem;
+  overflow-x: auto;
+  margin: 0.6rem 0;
+}
+.prose-chat pre code {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3 {
+  font-weight: 600;
+  margin: 0.8rem 0 0.4rem;
+}
+.prose-chat strong {
+  color: #fff;
+}
+.prose-chat a {
+  color: var(--color-accent-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-chat table {
+  border-collapse: collapse;
+  margin: 0.6rem 0;
+  font-size: 0.85em;
+}
+.prose-chat th,
+.prose-chat td {
+  border: 1px solid var(--color-border-strong);
+  padding: 0.35rem 0.7rem;
+}
+
+/* Citation chip inside answers */
+.prose-chat sup {
+  color: var(--color-accent-2);
+  font-weight: 600;
+}
+
+/* Thin scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 92, 246, 0.35) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.35);
+  border-radius: 3px;
+}

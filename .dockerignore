@@ -1,6 +1,7 @@
-# .dockerignore
+# Build context = repo root for all service images.
 
 __pycache__/
+**/__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -10,14 +11,14 @@ __pycache__/
 .venv/
 .cache/
 .pytest_cache/
-.prompts/
 data/
 secrets/
 docs/
+site/
 frontend/
-tests/
-node_modules/
+**/node_modules/
+**/tests/
 docker-compose*.yml
-Dockerfile*
+**/Dockerfile
 *.md
-*.gif
+mkdocs.yml

@@ -1,0 +1,9 @@
+Machine Learning is a field of artificial intelligence that focuses on building systems that learn from data.
+
+Supervised learning involves training a model on labeled data. Common algorithms include linear regression and decision trees.
+
+Unsupervised learning deals with unlabeled data. Clustering is a typical task.
+
+Reinforcement learning is about agents taking actions in an environment to maximize cumulative reward.
+
+Deep learning is a subset of machine learning that uses neural networks with many layers.

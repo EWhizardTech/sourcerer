@@ -1,43 +1,107 @@
-name: sourcerer_backend
+name: sourcerer
+
+x-service-env: &service-env
+  # torch.compile needs a C compiler the slim images lack; run eager.
+  TORCHDYNAMO_DISABLE: "1"
+  # Inside the compose network, Redis is reached via its service name.
+  REDIS_URL: redis://redis:6379/2
+  CELERY_BROKER_URL: redis://redis:6379/0
+  CELERY_BACKEND_URL: redis://redis:6379/1
+  # Shared model/asset cache mounted at /srv/.cache
+  ML_CACHE_DIR: /srv/.cache
+  HF_HOME: /srv/.cache/huggingface
+  HUGGINGFACE_HUB_CACHE: /srv/.cache/huggingface/hub
+  TRANSFORMERS_CACHE: /srv/.cache/huggingface/transformers
+  TORCH_HOME: /srv/.cache/torch
+  NLTK_DATA_DIR: /srv/.cache/nltk_data
+  SPACY_MODEL_DIR: /srv/.cache/spacy
+  FASTEMBED_CACHE_PATH: /srv/.cache/fastembed
 
 services:
-  api:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Browser-side calls go to the gateway's published port.
+      NEXT_PUBLIC_API_URL: http://localhost:8001
+    depends_on:
+      - gateway
+
+  gateway:
     build:
       context: .
-    image: sourcerer-app:latest
+      dockerfile: services/gateway/Dockerfile
     restart: unless-stopped
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
-    depends_on:
-      - redis
     ports:
       - "8001:8000"
-    env_file:
-      - .env
     environment:
-      # Inside the compose network, Redis is reached via its service name.
-      REDIS_URL: redis://redis:6379
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_BACKEND_URL: redis://redis:6379/1
-    volumes:
-      - ./secrets:/app/secrets:ro
-      - ./.cache:/app/.cache
-
-  worker:
-    image: sourcerer-app:latest
-    command: celery -A app.workers.celery_app.celery worker --loglevel=info
+      INGESTION_URL: http://ingestion:8000
+      RETRIEVAL_URL: http://retrieval:8000
+      QUIZ_URL: http://quiz:8000
+      CORS_ORIGINS: http://localhost:3000
     depends_on:
-      - api
-      - redis
-    env_file:
-      - .env
+      - ingestion
+      - retrieval
+      - quiz
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    restart: unless-stopped
+    env_file: [.env]
     environment:
-      # Inside the compose network, Redis is reached via its service name.
-      REDIS_URL: redis://redis:6379
-      CELERY_BROKER_URL: redis://redis:6379/0
-      CELERY_BACKEND_URL: redis://redis:6379/1
+      <<: *service-env
+      GDRIVE_SERVICE_ACCOUNT_PATH: /srv/secrets/acc.json
     volumes:
-      - ./secrets:/app/secrets:ro
-      - ./.cache:/app/.cache
+      - ./secrets:/srv/secrets:ro
+      - ./.cache:/srv/.cache
+      - ./data:/srv/services/ingestion/data
+    depends_on:
+      - redis
+
+  ingestion-worker:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    restart: unless-stopped
+    command: celery -A app.workers.celery_app.celery worker --loglevel=info
+    env_file: [.env]
+    environment:
+      <<: *service-env
+      GDRIVE_SERVICE_ACCOUNT_PATH: /srv/secrets/acc.json
+    volumes:
+      - ./secrets:/srv/secrets:ro
+      - ./.cache:/srv/.cache
+      - ./data:/srv/services/ingestion/data
+    depends_on:
+      - redis
+
+  retrieval:
+    build:
+      context: .
+      dockerfile: services/retrieval/Dockerfile
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      <<: *service-env
+    volumes:
+      - ./.cache:/srv/.cache
+    depends_on:
+      - redis
+
+  quiz:
+    build:
+      context: .
+      dockerfile: services/quiz/Dockerfile
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      <<: *service-env
+    volumes:
+      - ./.cache:/srv/.cache
 
   redis:
     image: redis:latest

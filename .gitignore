@@ -213,3 +213,5 @@ tests/results/
 data/sourcerer.db
 .vscode/
 data/sourcerer.db
+# MkDocs build output
+site/

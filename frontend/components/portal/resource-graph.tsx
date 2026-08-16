@@ -1,11 +1,11 @@
 "use client";
 
-/** Obsidian-style force graph of the library, scoped per subtree.
- * Folders are hubs; files colored by extension; wikilink edges dashed.
- * Click a folder to re-center the graph on it; click a file to open it. */
+/** Force graph of a folder subtree. Controlled by the surrounding browser:
+ * the parent owns the current root (breadcrumbs) and is notified when the
+ * user drills into a folder node. Files open in the viewer. */
 
 import { useQuery } from "@tanstack/react-query";
-import { ArrowUp, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -15,8 +15,8 @@ const ForceGraph2D = dynamic(() => import("react-force-graph-2d"), {
   ssr: false,
 });
 
-// File-type hues for the graph — data-viz color carries meaning here, so the
-// map stays multi-hue by design; UI chrome around it remains purple/neutral.
+// File-type hues — data-viz color carries meaning here, so the map stays
+// multi-hue by design; UI chrome around it remains purple/neutral.
 const EXT_COLORS: Record<string, string> = {
   pdf: "#f87171",
   md: "#a78bfa",
@@ -42,19 +42,23 @@ interface GraphNodeObject {
   y?: number;
 }
 
-export default function ResourceGraph() {
+export default function ResourceGraph({
+  rootId,
+  onOpenFolder,
+}: {
+  rootId: string;
+  onOpenFolder?: (id: string, name: string) => void;
+}) {
   const router = useRouter();
-  const [rootId, setRootId] = useState("root");
-  const [rootStack, setRootStack] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [dims, setDims] = useState({ width: 800, height: 600 });
+  const [dims, setDims] = useState({ width: 800, height: 560 });
 
   useEffect(() => {
     const measure = () => {
       if (containerRef.current) {
         setDims({
           width: containerRef.current.clientWidth,
-          height: Math.max(480, window.innerHeight - 260),
+          height: Math.max(440, window.innerHeight - 300),
         });
       }
     };
@@ -72,16 +76,13 @@ export default function ResourceGraph() {
   const handleClick = useCallback(
     (node: GraphNodeObject) => {
       if (node.is_folder) {
-        if (node.id !== rootId) {
-          setRootStack((stack) => [...stack, rootId]);
-          setRootId(node.id);
-        }
+        if (node.id !== rootId) onOpenFolder?.(node.id, node.name);
       } else {
         // The viewer route handles missing access with a request prompt.
         router.push(`/resources/view/${node.id}`);
       }
     },
-    [rootId, router]
+    [rootId, router, onOpenFolder]
   );
 
   const paintNode = useCallback(
@@ -107,27 +108,14 @@ export default function ResourceGraph() {
 
   return (
     <div ref={containerRef} className="glass relative overflow-hidden">
-      <div className="absolute left-3 top-3 z-10 flex items-center gap-2">
-        {rootStack.length > 0 && (
-          <button
-            onClick={() => {
-              setRootId(rootStack[rootStack.length - 1]);
-              setRootStack((stack) => stack.slice(0, -1));
-            }}
-            className="glass flex items-center gap-1.5 px-3 py-1.5 text-xs text-muted hover:text-text"
-          >
-            <ArrowUp className="size-3.5" /> Up a level
-          </button>
-        )}
-        {data?.truncated && (
-          <span className="glass px-3 py-1.5 text-xs text-warning">
-            Large subtree — showing a sample; zoom in via folders
-          </span>
-        )}
-      </div>
+      {data?.truncated && (
+        <span className="absolute left-3 top-3 z-10 rounded-full bg-warning/10 px-3 py-1.5 text-xs text-warning">
+          Large folder — showing a sample; open subfolders to see more
+        </span>
+      )}
 
       {isLoading ? (
-        <div className="grid h-[480px] place-items-center text-muted">
+        <div className="grid h-[440px] place-items-center text-muted">
           <Loader2 className="size-6 animate-spin" />
         </div>
       ) : (

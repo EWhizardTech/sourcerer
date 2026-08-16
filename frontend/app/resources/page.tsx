@@ -318,7 +318,7 @@ export default function ResourcesPage() {
               isAdmin={me.is_admin}
             />
           ) : (
-            <ResourceGraph />
+            <ResourceGraph rootId="root" />
           )}
         </div>
       )}

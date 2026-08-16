@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { contentRawUrl, fetchContent } from "@/lib/portal-api";
+import { fetchContent } from "@/lib/portal-api";
 
 /* ---------- PDF (canvas-only, watermark baked into bitmap) ---------- */
 
@@ -133,8 +133,8 @@ function useTextContent(url: string) {
   return { text, error };
 }
 
-export function MarkdownViewer({ fileId }: { fileId: string }) {
-  const { text, error } = useTextContent(contentRawUrl(fileId));
+export function MarkdownViewer({ url }: { url: string }) {
+  const { text, error } = useTextContent(url);
   if (error) return <div className="glass p-6 text-sm text-danger">{error}</div>;
   if (text === null)
     return <div className="p-6 text-muted">Loading…</div>;
@@ -145,8 +145,8 @@ export function MarkdownViewer({ fileId }: { fileId: string }) {
   );
 }
 
-export function TextViewer({ fileId }: { fileId: string }) {
-  const { text, error } = useTextContent(contentRawUrl(fileId));
+export function TextViewer({ url }: { url: string }) {
+  const { text, error } = useTextContent(url);
   if (error) return <div className="glass p-6 text-sm text-danger">{error}</div>;
   if (text === null)
     return <div className="p-6 text-muted">Loading…</div>;
@@ -159,13 +159,13 @@ export function TextViewer({ fileId }: { fileId: string }) {
 
 /* ---------- Image / video ---------- */
 
-export function ImageViewer({ fileId, name }: { fileId: string; name: string }) {
+export function ImageViewer({ url, name }: { url: string; name: string }) {
   const [src, setSrc] = useState<string | null>(null);
   const [error, setError] = useState("");
   useEffect(() => {
     let objectUrl: string | null = null;
     let cancelled = false;
-    fetchContent(contentRawUrl(fileId))
+    fetchContent(url)
       .then((resp) => resp.blob())
       .then((blob) => {
         if (cancelled) return;
@@ -177,7 +177,7 @@ export function ImageViewer({ fileId, name }: { fileId: string; name: string }) 
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [fileId]);
+  }, [url]);
 
   if (error) return <div className="glass p-6 text-sm text-danger">{error}</div>;
   if (!src) return <div className="p-6 text-muted">Loading…</div>;
@@ -192,10 +192,10 @@ export function ImageViewer({ fileId, name }: { fileId: string; name: string }) 
   );
 }
 
-export function VideoViewer({ fileId }: { fileId: string }) {
+export function VideoViewer({ url }: { url: string }) {
   return (
     <video
-      src={contentRawUrl(fileId)}
+      src={url}
       controls
       controlsList="nodownload noremoteplayback"
       disablePictureInPicture

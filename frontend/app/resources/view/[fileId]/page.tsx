@@ -86,21 +86,24 @@ export default function ViewerPage({
 
   if (!meta) return null;
 
+  const rawUrl = contentRawUrl(fileId, meta.ticket);
+  const pdfUrl = contentPdfUrl(fileId, meta.ticket);
+
   const body = (() => {
     switch (meta.viewer) {
       case "pdf":
-        return <PdfCanvasViewer url={contentRawUrl(fileId)} email={me.email} />;
+        return <PdfCanvasViewer url={rawUrl} email={me.email} />;
       case "office-pdf":
       case "gdoc-pdf":
-        return <PdfCanvasViewer url={contentPdfUrl(fileId)} email={me.email} />;
+        return <PdfCanvasViewer url={pdfUrl} email={me.email} />;
       case "md":
-        return <MarkdownViewer fileId={fileId} />;
+        return <MarkdownViewer url={rawUrl} />;
       case "text":
-        return <TextViewer fileId={fileId} />;
+        return <TextViewer url={rawUrl} />;
       case "image":
-        return <ImageViewer fileId={fileId} name={meta.name} />;
+        return <ImageViewer url={rawUrl} name={meta.name} />;
       case "video":
-        return <VideoViewer fileId={fileId} />;
+        return <VideoViewer url={rawUrl} />;
       default:
         return (
           <div className="glass grid place-items-center p-12 text-center">

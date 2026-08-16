@@ -24,6 +24,8 @@ from app.services import audit
 from app.services.access import user_can_access
 from app.services.converter import GOOGLE_EXPORT_PDF, OFFICE_TO_PDF, get_pdf
 from app.services.gdrive import get_access_token
+from app.services.security import create_content_ticket, verify_content_ticket
+from sourcerer_core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -154,6 +156,14 @@ async def meta(
 ) -> dict:
     _guard_content_request(request)
     node = await _accessible_node(file_id, user, db)
+    viewer = classify_viewer(node)
+    # A short-lived signed ticket bound to this file + this user. Streamed media
+    # gets a longer window (one <video> URL must survive the whole playback).
+    ttl = (
+        settings.PORTAL_CONTENT_STREAM_TTL_SECONDS
+        if viewer == "video"
+        else settings.PORTAL_CONTENT_TICKET_TTL_SECONDS
+    )
     return {
         "id": node.id,
         "name": node.name,
@@ -163,7 +173,8 @@ async def meta(
         "modified_time": (
             node.modified_time.isoformat() if node.modified_time else None
         ),
-        "viewer": classify_viewer(node),
+        "viewer": viewer,
+        "ticket": create_content_ticket(node.id, user.google_sub, ttl),
     }
 
 
@@ -173,6 +184,10 @@ async def raw(
 ) -> StreamingResponse:
     _guard_content_request(request)
     node = await _accessible_node(file_id, user, db)
+    if not verify_content_ticket(
+        request.query_params.get("t", ""), node.id, user.google_sub
+    ):
+        raise HTTPException(status_code=403, detail="Invalid or expired content link")
     if node.mime_type in GOOGLE_EXPORT_PDF:
         raise HTTPException(status_code=409, detail="Use the /pdf endpoint")
 
@@ -239,6 +254,10 @@ async def converted_pdf(
 ) -> FileResponse:
     _guard_content_request(request)
     node = await _accessible_node(file_id, user, db)
+    if not verify_content_ticket(
+        request.query_params.get("t", ""), node.id, user.google_sub
+    ):
+        raise HTTPException(status_code=403, detail="Invalid or expired content link")
     if node.mime_type not in GOOGLE_EXPORT_PDF | OFFICE_TO_PDF:
         raise HTTPException(status_code=409, detail="Use the /raw endpoint")
     try:

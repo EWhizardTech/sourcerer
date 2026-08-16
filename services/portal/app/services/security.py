@@ -39,6 +39,40 @@ def decode_session_token(token: str) -> dict | None:
         return None
 
 
+_CONTENT_AUD = "content"
+
+
+def create_content_ticket(file_id: str, user_sub: str, ttl_seconds: int) -> str:
+    """Short-lived token that authorizes streaming ONE file for ONE user. Bound
+    into the content URL so a copied link expires quickly and is useless to a
+    different user (checked against the session on top)."""
+    now = int(time.time())
+    return jwt.encode(
+        {
+            "fid": file_id,
+            "sub": user_sub,
+            "aud": _CONTENT_AUD,
+            "iat": now,
+            "exp": now + ttl_seconds,
+        },
+        settings.PORTAL_SESSION_SECRET,
+        algorithm=_ALGO,
+    )
+
+
+def verify_content_ticket(token: str, file_id: str, user_sub: str) -> bool:
+    try:
+        claims = jwt.decode(
+            token,
+            settings.PORTAL_SESSION_SECRET,
+            algorithms=[_ALGO],
+            audience=_CONTENT_AUD,
+        )
+    except jwt.InvalidTokenError:
+        return False
+    return claims.get("fid") == file_id and claims.get("sub") == user_sub
+
+
 def create_state_token() -> tuple[str, str]:
     """Return (state, signed short-lived cookie value) for the OAuth flow."""
     state = uuid.uuid4().hex

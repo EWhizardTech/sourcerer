@@ -105,6 +105,10 @@ class Settings(BaseSettings):
     # Comma-separated name globs skipped during catalog sync (junk dirs/files).
     PORTAL_SYNC_EXCLUDE: str = "__pycache__,node_modules,venv,.venv,*.pyc"
     PORTAL_CONVERT_TIMEOUT_SECONDS: int = 120
+    # Signed content-URL lifetime: short for one-shot fetches (pdf/image/text),
+    # longer for streamed media (a single <video> URL must last the playback).
+    PORTAL_CONTENT_TICKET_TTL_SECONDS: int = 300  # 5 min
+    PORTAL_CONTENT_STREAM_TTL_SECONDS: int = 60 * 60 * 6  # 6h
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -139,6 +139,7 @@ export interface ContentMeta {
   path: string;
   modified_time: string | null;
   viewer: "pdf" | "md" | "text" | "image" | "video" | "office-pdf" | "gdoc-pdf" | "unsupported";
+  ticket: string;
 }
 
 /* ---------- Helpers ---------- */
@@ -275,8 +276,10 @@ export const adminAudit = (limit = 50) =>
 export const getContentMeta = (fileId: string) =>
   get<ContentMeta>(`/content/${fileId}/meta`);
 
-export const contentRawUrl = (fileId: string) => `${BASE}/content/${fileId}/raw`;
-export const contentPdfUrl = (fileId: string) => `${BASE}/content/${fileId}/pdf`;
+export const contentRawUrl = (fileId: string, ticket: string) =>
+  `${BASE}/content/${fileId}/raw?t=${encodeURIComponent(ticket)}`;
+export const contentPdfUrl = (fileId: string, ticket: string) =>
+  `${BASE}/content/${fileId}/pdf?t=${encodeURIComponent(ticket)}`;
 
 /** Credentialed fetch of content bytes (images, pdf data, text). */
 export async function fetchContent(url: string): Promise<Response> {
